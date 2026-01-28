@@ -1,0 +1,10 @@
+{
+  "users": [
+   {
+      "rut": "20-12345678-7",
+      "name": "Juan Pérez",
+      "password": "marcos",
+      "createdAt": "2026-01-28T10:30:00.000Z"
+    }
+    ]
+}
