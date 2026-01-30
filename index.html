@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroLabor Mendoza - Registro de Labores Agrícolas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2d5016;
+            --primary-light: #4a7c2a;
+            --primary-dark: #1a3009;
+            --secondary: #d4a574;
+            --accent: #e8b86d;
+            --bg-main: #faf8f3;
+            --bg-card: #ffffff;
+            --text-primary: #2a2a2a;
+            --text-secondary: #666666;
+            --border: #e0ddd5;
+            --success: #4a7c2a;
+            --danger: #c94c4c;
+            --shadow: rgba(45, 80, 22, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 12px var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05));
+            pointer-events: none;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            overflow: hidden;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            opacity: 0.95;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Auth Screen */
+        .auth-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(212, 165, 116, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(232, 184, 109, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .auth-logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .logo-upload-section {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .logo-upload-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logo-upload-btn:hover {
+            background: var(--secondary);
+        }
+
+        .auth-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input, select, textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: transparent;
+            color: var(--primary);
+            padding: 1rem;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.75rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .alert {
+            padding: 0.9rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(74, 124, 42, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .alert-danger {
+            background: rgba(201, 76, 76, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .alert-info {
+            background: rgba(45, 80, 22, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .card-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+        }
+
+        .btn-export {
+            background: var(--secondary);
+            color: var(--text-primary);
+            margin-left: 1rem;
+        }
+
+        .btn-export:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .list-item {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .list-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .list-item-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select {
+            background: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .btn-select:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #a33d3d;
+            transform: translateY(-1px);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-dark);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: var(--bg-main);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .filter-section {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .badge-aplicaciones {
+            background: rgba(74, 124, 42, 0.15);
+            color: var(--primary);
+        }
+
+        .badge-labranzas {
+            background: rgba(212, 165, 116, 0.25);
+            color: #8b6e4e;
+        }
+
+        .badge-riego {
+            background: rgba(52, 152, 219, 0.15);
+            color: #2980b9;
+        }
+
+        .badge-fertilizacion {
+            background: rgba(255, 193, 7, 0.2);
+            color: #c17900;
+        }
+
+        .badge-cosecha {
+            background: rgba(232, 184, 109, 0.25);
+            color: #c07600;
+        }
+
+        .multi-select-container {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            background: var(--bg-main);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .multi-select-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .multi-select-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .multi-select-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .dosis-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .dosis-input-group input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .conditional-fields {
+            background: var(--bg-main);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .conditional-fields-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .auth-card {
+                padding: 2rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                padding: 0.8rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .list-item {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .list-item-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-export {
+                margin-left: 0;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="appContainer">
+        <!-- Auth Screen -->
+        <div id="authScreen" class="auth-screen">
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon" id="authLogoIcon">
+                        🌾
+                    </div>
+                    <h1 class="auth-title">AgroLabor</h1>
+                    <p class="auth-subtitle">Sistema de Registro de Labores Agrícolas - Mendoza</p>
+                    <div class="logo-upload-section">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">
+                            Para personalizar el logo, editar la línea 8 del archivo HTML:<br>
+                            <code style="background: #f0f0f0; padding: 0.3rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.5rem;">
+                            const LOGO_URL = 'URL_DE_TU_LOGO_AQUI';
+                            </code>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <div id="loginForm">
+                    <div id="loginAlert"></div>
+                    <div class="form-group">
+                        <label class="form-label">RUT</label>
+                        <input type="text" id="loginRut" class="form-input" placeholder="Ej: 20-12345678-9" maxlength="13">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Ingrese su contraseña">
+                    </div>
+                    <button class="btn-primary" onclick="app.login()">Ingresar</button>
+                    <button class="btn-secondary" onclick="app.showRegister()">Crear Nueva Cuenta</button>
+                </div>
+
+                <!-- Register Form -->
+                <div id="registerForm" class="hidden">
+                    <div id="registerAlert"></div>
+                    <div class="form-group">
+                        <label class="form-label">RUT</label>
+                        <input type="text" id="registerRut" class="form-input" placeholder="Ej: 20-12345678-9" maxlength="13">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nombre Completo</label>
+                        <input type="text" id="registerName" class="form-input" placeholder="Ingrese su nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" id="registerPassword" class="form-input" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirmar Contraseña</label>
+                        <input type="password" id="registerPasswordConfirm" class="form-input" placeholder="Repita su contraseña">
+                    </div>
+                    <button class="btn-primary" onclick="app.register()">Registrarse</button>
+                    <button class="btn-secondary" onclick="app.showLogin()">Ya tengo cuenta</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" class="hidden">
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <div class="logo-icon" id="headerLogoIcon">🌾</div>
+                        <span>AgroLabor Mendoza</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName"></span>
+                        <button class="btn-logout" onclick="app.logout()">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="app.switchTab('fincas')">Fincas</button>
+                    <button class="tab" onclick="app.switchTab('cuarteles')">Cuarteles</button>
+                    <button class="tab" onclick="app.switchTab('labores')">Labores</button>
+                    <button class="tab" onclick="app.switchTab('consultas')">Consultas</button>
+                </div>
+
+                <!-- Fincas Tab -->
+                <div id="fincasTab" class="tab-content active">
+                    <div class="card">
+                        <h2 class="card-title">Registrar Nueva Finca</h2>
+                        <div id="fincaAlert"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nombre de la Finca</label>
+                                <input type="text" id="fincaNombre" class="form-input" placeholder="Ej: Finca Los Álamos">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" id="fincaDireccion" class="form-input" placeholder="Ej: Ruta 7 Km 1025">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Superficie (ha)</label>
+                                <input type="number" id="fincaSuperficie" class="form-input" placeholder="Ej: 25.5" step="0.1">
+                            </div>
+                        </div>
+                        <button class="btn btn-add" onclick="app.addFinca()">Agregar Finca</button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Mis Fincas</h2>
+                        <div id="fincasList"></div>
+                    </div>
+                </div>
+
+                <!-- Cuarteles Tab -->
+                <div id="cuartelesTab" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Registrar Nuevo Cuartel</h2>
+                        <div id="cuartelAlert"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Seleccionar Finca</label>
+                                <select id="cuartelFinca" class="form-input">
+                                    <option value="">-- Seleccione una finca --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nombre del Cuartel</label>
+                                <input type="text" id="cuartelNombre" class="form-input" placeholder="Ej: Cuartel Norte">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Superficie (ha)</label>
+                                <input type="number" id="cuartelSuperficie" class="form-input" placeholder="Ej: 5.2" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cultivo</label>
+                                <select id="cuartelCultivo" class="form-input" onchange="app.updateVariedades()">
+                                    <option value="">-- Seleccione cultivo --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Variedad</label>
+                                <select id="cuartelVariedad" class="form-input">
+                                    <option value="">-- Primero seleccione cultivo --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Sistema de Riego</label>
+                                <select id="cuartelRiego" class="form-input" onchange="app.toggleOtroRiego()">
+                                    <option value="">-- Seleccione sistema --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" id="otroRiegoContainer" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Especificar Sistema de Riego</label>
+                                <input type="text" id="cuartelRiegoOtro" class="form-input" placeholder="Especifique el sistema">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Año de Implantación (Opcional)</label>
+                                <input type="number" id="cuartelAnio" class="form-input" placeholder="Ej: 2015" min="1900" max="2100">
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="cuartelAntigranizo">
+                                    <label for="cuartelAntigranizo">Presencia de tela antigranizo</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-add" onclick="app.addCuartel()">Agregar Cuartel</button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Mis Cuarteles</h2>
+                        <div id="cuartelesList"></div>
+                    </div>
+                </div>
+
+                <!-- Labores Tab -->
+                <div id="laboresTab" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Registrar Labor</h2>
+                        <div id="laborAlert"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Tipo de Labor</label>
+                                <select id="laborTipo" class="form-input" onchange="app.updateLaborFields()">
+                                    <option value="">-- Seleccione --</option>
+                                    <option value="riego">Riego</option>
+                                    <option value="aplicaciones">Aplicaciones</option>
+                                    <option value="fertilizacion">Fertilización</option>
+                                    <option value="labranzas">Labranzas</option>
+                                    <option value="cosecha">Cosecha</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cuartel</label>
+                                <select id="laborCuartel" class="form-input">
+                                    <option value="">-- Seleccione un cuartel --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" id="laborFecha" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Conditional Fields based on labor type -->
+                        <div id="laborConditionalFields"></div>
+
+                        <div class="form-group">
+                            <label class="form-label">Observaciones</label>
+                            <textarea id="laborObservaciones" class="form-input" placeholder="Notas adicionales (opcional)"></textarea>
+                        </div>
+                        <button class="btn btn-add" onclick="app.addLabor()">Registrar Labor</button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Últimas Labores Registradas</h2>
+                        <div id="laboresList"></div>
+                    </div>
+                </div>
+
+                <!-- Consultas Tab -->
+                <div id="consultasTab" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Consultar Labores</h2>
+                        <div class="filter-section">
+                            <div class="filter-title">Filtros de Búsqueda</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Tipo de Labor</label>
+                                    <select id="consultaTipo" class="form-input" onchange="app.filterLabores()">
+                                        <option value="">Todas las labores</option>
+                                        <option value="riego">Riego</option>
+                                        <option value="aplicaciones">Aplicaciones</option>
+                                        <option value="fertilizacion">Fertilización</option>
+                                        <option value="labranzas">Labranzas</option>
+                                        <option value="cosecha">Cosecha</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Cuartel</label>
+                                    <select id="consultaCuartel" class="form-input" onchange="app.filterLabores()">
+                                        <option value="">Todos los cuarteles</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Fecha Desde</label>
+                                    <input type="date" id="consultaFechaDesde" class="form-input" onchange="app.filterLabores()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha Hasta</label>
+                                    <input type="date" id="consultaFechaHasta" class="form-input" onchange="app.filterLabores()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-export" onclick="app.exportToExcel()">📥 Exportar a Excel</button>
+                        <div id="consultaResults"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN - EDITAR ESTAS LÍNEAS
+        // ============================================
+        
+        // 1. URL de Google Apps Script (obtener después de desplegar)
+        // Ejemplo: 'https://script.google.com/macros/s/AKfycby.../exec'
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwC12vK_V6xeMbOW03EkBrmZW8oeGQ-gbW8oU8uCAZ2ps1dwjiK6g5meKXSwICiNk7TfQ/execUI';
+        
+        // 2. URL del logo (opcional)
+        // Ejemplo: 'https://miempresa.com/logo.png' o './img/logo.png'
+        const LOGO_URL = '';
+        
+        // ============================================
+        // NO EDITAR DEBAJO DE ESTA LÍNEA
+        // ============================================
+        
+        
+        // Configuration data
+        let CONFIG = {
+            cultivos: [],
+            variedadesPorCultivo: {},
+            sistemasRiego: [],
+            productosAplicacion: [],
+            productosFertilizacion: [],
+            equiposLabranza: []
+        };
+
+        // Load configuration from JSON
+        async function loadConfig() {
+            const defaultConfig = {
+                "cultivos": ["Vid", "Olivo", "Manzana", "Pera", "Durazno", "Ciruela", "Cereza", "Damasco", "Nogal", "Almendro", "Ajo", "Cebolla", "Tomate", "Zanahoria", "Papa", "Maíz", "Alfalfa", "Otro"],
+                "variedadesPorCultivo": {
+                    "Vid": ["Malbec", "Cabernet Sauvignon", "Merlot", "Syrah", "Bonarda", "Chardonnay", "Torrontés", "Sauvignon Blanc", "Chenin", "Otra"],
+                    "Olivo": ["Arauco", "Arbequina", "Barnea", "Coratina", "Frantoio", "Manzanilla", "Picual", "Otra"],
+                    "Manzana": ["Red Delicious", "Granny Smith", "Gala", "Fuji", "Pink Lady", "Cripps Pink", "Otra"],
+                    "Pera": ["Williams", "Packham's", "Beurré D'Anjou", "Abate Fetel", "Otra"],
+                    "Durazno": ["Flordaking", "Elegant Lady", "O'Henry", "Pavía", "Otra"],
+                    "Ciruela": ["Angeleno", "Larry Ann", "Black Amber", "Otra"],
+                    "Cereza": ["Bing", "Lapins", "Stella", "Sweetheart", "Otra"],
+                    "Damasco": ["Búlida", "Canino", "Moniquí", "Otra"],
+                    "Nogal": ["Chandler", "Franquette", "Serr", "Otra"],
+                    "Almendro": ["Nonpareil", "Carmel", "Butte", "Otra"],
+                    "Otro": ["Especificar"]
+                },
+                "sistemasRiego": ["Surcos", "Melgas", "Goteo", "Aspersión", "Pivot", "Otro"],
+                "productosAplicacion": ["Glifosato", "Azufre", "Cobre", "Mancozeb", "Captan", "Tiofanato Metílico", "Tebuconazole", "Difenoconazole", "Imidacloprid", "Clorpirifos", "Lambda Cihalotrina", "Abamectina", "Aceite Mineral", "Bacillus thuringiensis", "Azadiractina", "Otro"],
+                "productosFertilizacion": ["Urea (46-0-0)", "Fosfato Diamónico (18-46-0)", "Fosfato Monoamónico (11-52-0)", "Nitrato de Amonio (33-0-0)", "Nitrato de Calcio", "Sulfato de Potasio (0-0-50)", "Cloruro de Potasio (0-0-60)", "Sulfato de Zinc", "Sulfato de Magnesio", "Ácido Bórico", "Compost", "Guano", "Humus de Lombriz", "Fertilizante Foliar Completo", "Otro"],
+                "equiposLabranza": ["Arado de Discos", "Arado de Rejas", "Rastra de Discos", "Cincel", "Subsolador", "Rotovator", "Cultivador", "Niveladora", "Surcadora", "Rolo Compactador", "Desmalezadora", "Otro"]
+            };
+
+            const stored = localStorage.getItem('config_menus');
+            CONFIG = stored ? JSON.parse(stored) : defaultConfig;
+            
+            if (!stored) {
+                localStorage.setItem('config_menus', JSON.stringify(defaultConfig));
+            }
+        }
+
+        // Database Manager
+        const DB = {
+            usuarios: { users: [] },
+            fincas: { fincas: [] },
+            cuarteles: { cuarteles: [] },
+            labores: { labores: [] },
+
+            async loadAll() {
+                const stored = {
+                    usuarios: localStorage.getItem('db_usuarios'),
+                    fincas: localStorage.getItem('db_fincas'),
+                    cuarteles: localStorage.getItem('db_cuarteles'),
+                    labores: localStorage.getItem('db_labores')
+                };
+
+                this.usuarios = stored.usuarios ? JSON.parse(stored.usuarios) : { users: [] };
+                this.fincas = stored.fincas ? JSON.parse(stored.fincas) : { fincas: [] };
+                this.cuarteles = stored.cuarteles ? JSON.parse(stored.cuarteles) : { cuarteles: [] };
+                this.labores = stored.labores ? JSON.parse(stored.labores) : { labores: [] };
+            },
+
+            save(dbName) {
+                localStorage.setItem(`db_${dbName}`, JSON.stringify(this[dbName]));
+                this.saveToFile(dbName);
+            },
+
+            saveToFile(dbName) {
+                // Auto-download JSON file to keep external file updated
+                const dataStr = JSON.stringify(this[dbName], null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `db_${dbName}.json`;
+                
+                // Auto-download (browsers may block this, user needs to allow)
+                // For production, this would use a server endpoint
+                console.log(`Base de datos actualizada: db_${dbName}.json`);
+                console.log(`Datos:`, this[dbName]);
+                
+                // Store trigger for manual download if needed
+                window.pendingDownloads = window.pendingDownloads || {};
+                window.pendingDownloads[dbName] = {
+                    blob: dataBlob,
+                    filename: `db_${dbName}.json`
+                };
+            },
+
+            downloadPending(dbName) {
+                if (window.pendingDownloads && window.pendingDownloads[dbName]) {
+                    const data = window.pendingDownloads[dbName];
+                    const url = URL.createObjectURL(data.blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = data.filename;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }
+            }
+        };
+
+        const app = {
+            currentUser: null,
+            currentFilteredData: [],
+
+            async init() {
+                await loadConfig();
+                await DB.loadAll();
+                
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    this.currentUser = JSON.parse(savedUser);
+                    this.showMainApp();
+                } else {
+                    // Populate config selects even before login for proper initialization
+                    this.populateConfigSelects();
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                if (document.getElementById('laborFecha')) {
+                    document.getElementById('laborFecha').value = today;
+                }
+
+                // Load logo from URL (configured at top of file)
+                if (LOGO_URL && LOGO_URL !== 'URL_DE_TU_LOGO_AQUI') {
+                    const authLogo = document.getElementById('authLogoIcon');
+                    const headerLogo = document.getElementById('headerLogoIcon');
+                    if (authLogo) authLogo.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
+                    if (headerLogo) headerLogo.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
+                }
+            },
+
+
+
+            populateConfigSelects() {
+                // Populate cultivos
+                const cultivoSelect = document.getElementById('cuartelCultivo');
+                if (cultivoSelect) {
+                    cultivoSelect.innerHTML = '<option value="">-- Seleccione cultivo --</option>' +
+                        CONFIG.cultivos.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
+
+                // Populate sistemas de riego
+                const riegoSelect = document.getElementById('cuartelRiego');
+                if (riegoSelect) {
+                    riegoSelect.innerHTML = '<option value="">-- Seleccione sistema --</option>' +
+                        CONFIG.sistemasRiego.map(r => `<option value="${r}">${r}</option>`).join('');
+                }
+            },
+
+            updateVariedades() {
+                const cultivo = document.getElementById('cuartelCultivo').value;
+                const variedadSelect = document.getElementById('cuartelVariedad');
+                
+                if (cultivo && CONFIG.variedadesPorCultivo[cultivo]) {
+                    variedadSelect.innerHTML = '<option value="">-- Seleccione variedad --</option>' +
+                        CONFIG.variedadesPorCultivo[cultivo].map(v => `<option value="${v}">${v}</option>`).join('');
+                } else {
+                    variedadSelect.innerHTML = '<option value="">-- Primero seleccione cultivo --</option>';
+                }
+            },
+
+            toggleOtroRiego() {
+                const riego = document.getElementById('cuartelRiego').value;
+                const container = document.getElementById('otroRiegoContainer');
+                container.style.display = riego === 'Otro' ? 'block' : 'none';
+            },
+
+
+            searchProducts(tipo, searchTerm) {
+                const containerId = tipo === 'aplicacion' ? 'productosAplicacionContainer' : 'productosFertilizacionContainer';
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                const items = container.querySelectorAll('.multi-select-item');
+                searchTerm = searchTerm.toLowerCase();
+                
+                items.forEach(item => {
+                    const label = item.querySelector('label');
+                    if (label) {
+                        const text = label.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    }
+                });
+            },
+            updateLaborFields() {
+                const tipo = document.getElementById('laborTipo').value;
+                const container = document.getElementById('laborConditionalFields');
+                
+                if (!tipo) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                let html = '<div class="conditional-fields">';
+                html += `<div class="conditional-fields-title">Datos de ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</div>`;
+
+                switch(tipo) {
+                    case 'riego':
+                        html += `
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Tiempo (horas)</label>
+                                    <input type="number" id="laborTiempo" class="form-input" placeholder="Ej: 8" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jornales</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'aplicaciones':
+                        html += `
+                                                        <div class="form-group">
+                                <label class="form-label">Productos Utilizados</label>
+                                <input type="text" class="search-box" placeholder="🔍 Buscar productos..." oninput="app.searchProducts('aplicacion', this.value)">
+                                <div class="multi-select-container" id="productosAplicacionContainer">
+                                    ${CONFIG.productosAplicacion.map(p => `
+                                        <div class="multi-select-item">
+                                            <input type="checkbox" id="prod_${p.replace(/\s+/g, '_')}" value="${p}" onchange="app.toggleDosisInput('aplicacion', '${p.replace(/\s+/g, '_')}')">
+                                            <label for="prod_${p.replace(/\s+/g, '_')}">${p}</label>
+                                        </div>
+                                        <div id="dosis_prod_${p.replace(/\s+/g, '_')}" style="display:none;" class="dosis-input-group">
+                                            <input type="text" placeholder="Dosis (opcional)" class="dosis-input" data-producto="${p}">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Jornales</label>
+                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 3" step="0.5">
+                            </div>
+                        `;
+                        break;
+
+                    case 'fertilizacion':
+                        html += `
+                                                        <div class="form-group">
+                                <label class="form-label">Productos Utilizados</label>
+                                <input type="text" class="search-box" placeholder="🔍 Buscar productos..." oninput="app.searchProducts('fertilizacion', this.value)">
+                                <div class="multi-select-container" id="productosFertilizacionContainer">
+                                    ${CONFIG.productosFertilizacion.map(p => `
+                                        <div class="multi-select-item">
+                                            <input type="checkbox" id="fert_${p.replace(/\s+/g, '_')}" value="${p}" onchange="app.toggleDosisInput('fertilizacion', '${p.replace(/\s+/g, '_')}')">
+                                            <label for="fert_${p.replace(/\s+/g, '_')}">${p}</label>
+                                        </div>
+                                        <div id="dosis_fert_${p.replace(/\s+/g, '_')}" style="display:none;" class="dosis-input-group">
+                                            <input type="text" placeholder="Dosis (opcional)" class="dosis-input" data-producto="${p}">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Jornales</label>
+                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 3" step="0.5">
+                            </div>
+                        `;
+                        break;
+
+                    case 'labranzas':
+                        html += `
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Equipo Utilizado</label>
+                                    <select id="laborEquipo" class="form-input">
+                                        <option value="">-- Seleccione equipo --</option>
+                                        ${CONFIG.equiposLabranza.map(e => `<option value="${e}">${e}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jornales</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'cosecha':
+                        html += `
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Kg Cosechados</label>
+                                    <input type="number" id="laborKgCosechados" class="form-input" placeholder="Ej: 5000" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jornales</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 10" step="0.5">
+                                </div>
+                            </div>
+                        `;
+                        break;
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            toggleDosisInput(tipo, productoId) {
+                const checkbox = document.getElementById(`${tipo === 'aplicacion' ? 'prod' : 'fert'}_${productoId}`);
+                const dosisDiv = document.getElementById(`dosis_${tipo === 'aplicacion' ? 'prod' : 'fert'}_${productoId}`);
+                dosisDiv.style.display = checkbox.checked ? 'flex' : 'none';
+            },
+
+            validateRut(rut) {
+                const rutRegex = /^\d{2}-\d{7,8}-\d{1}$/;
+                return rutRegex.test(rut);
+            },
+
+            showAlert(elementId, message, type = 'danger') {
+                const alertDiv = document.getElementById(elementId);
+                alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                setTimeout(() => {
+                    alertDiv.innerHTML = '';
+                }, 5000);
+            },
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            },
+
+            showLogin() {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginAlert').innerHTML = '';
+                document.getElementById('registerAlert').innerHTML = '';
+            },
+
+            showRegister() {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('loginAlert').innerHTML = '';
+                document.getElementById('registerAlert').innerHTML = '';
+            },
+
+            async register() {
+                const rut = document.getElementById('registerRut').value.trim();
+                const name = document.getElementById('registerName').value.trim();
+                const password = document.getElementById('registerPassword').value;
+                const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+                if (!rut || !name || !password || !passwordConfirm) {
+                    this.showAlert('registerAlert', 'Por favor complete todos los campos');
+                    return;
+                }
+
+                if (!this.validateRut(rut)) {
+                    this.showAlert('registerAlert', 'El formato del RUT no es válido (XX-XXXXXXXX-X)');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    this.showAlert('registerAlert', 'La contraseña debe tener al menos 6 caracteres');
+                    return;
+                }
+
+                if (password !== passwordConfirm) {
+                    this.showAlert('registerAlert', 'Las contraseñas no coinciden');
+                    return;
+                }
+
+                try {
+                    const users = await DB.getUsers();
+                    const existingUser = users.find(u => u.rut === rut);
+                    
+                    if (existingUser) {
+                        this.showAlert('registerAlert', 'Ya existe un usuario registrado con este RUT', 'info');
+                        return;
+                    }
+
+                    const newUser = {
+                        rut: rut,
+                        name: name,
+                        password: password,
+                        created_at: new Date().toISOString()
+                    };
+
+                    await DB.addUser(newUser);
+                
+                this.showAlert('registerAlert', 'Usuario registrado exitosamente. Ya puede ingresar.', 'success');
+                
+                setTimeout(() => {
+                    this.showLogin();
+                    document.getElementById('loginRut').value = rut;
+                }, 2000);
+            },
+
+            async login() {
+                const rut = document.getElementById('loginRut').value.trim();
+                const password = document.getElementById('loginPassword').value;
+
+                if (!rut || !password) {
+                    this.showAlert('loginAlert', 'Por favor complete todos los campos');
+                    return;
+                }
+
+                if (!this.validateRut(rut)) {
+                    this.showAlert('loginAlert', 'El formato del RUT no es válido');
+                    return;
+                }
+
+                try {
+                    const users = await DB.getUsers();
+                    const user = users.find(u => u.rut === rut);
+                    
+                    if (!user) {
+                        this.showAlert('loginAlert', 'Usuario no encontrado. Verifique su RUT o cree una cuenta nueva.');
+                        return;
+                    }
+
+                    if (user.password !== password) {
+                        this.showAlert('loginAlert', 'Contraseña incorrecta');
+                        return;
+                    }
+
+                    this.currentUser = user;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    this.showMainApp();
+                } catch (error) {
+                    this.showAlert('loginAlert', 'Error de conexión. Verifica la configuración de Google Sheets.');
+                    console.error('Login error:', error);
+                }
+            },
+
+            logout() {
+                this.currentUser = null;
+                localStorage.removeItem('currentUser');
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                this.showLogin();
+            },
+
+            showMainApp() {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('userName').textContent = this.currentUser.name;
+                
+                // Re-populate config selects to ensure they're loaded
+                this.populateConfigSelects();
+                
+                this.loadFincas();
+                this.loadCuarteles();
+                this.loadLabores();
+                this.populateSelects();
+            },
+
+            switchTab(tabName) {
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                event.target.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabName + 'Tab').classList.add('active');
+
+                if (tabName === 'consultas') {
+                    this.filterLabores();
+                }
+            },
+
+            addFinca() {
+                const nombre = document.getElementById('fincaNombre').value.trim();
+                const direccion = document.getElementById('fincaDireccion').value.trim();
+                const superficie = document.getElementById('fincaSuperficie').value;
+
+                if (!nombre || !direccion || !superficie) {
+                    this.showAlert('fincaAlert', 'Por favor complete todos los campos');
+                    return;
+                }
+
+                const finca = {
+                    id: 'finca_' + Date.now(),
+                    user_rut: this.currentUser.rut,
+                    nombre,
+                    direccion,
+                    superficie: parseFloat(superficie),
+                    created_at: new Date().toISOString()
+                };
+
+                try {
+                    await DB.addFinca(finca);
+                    
+                    this.showAlert('fincaAlert', 'Finca agregada exitosamente', 'success');
+                    this.showNotification('✓ Finca registrada en Google Sheets');
+                    
+                    document.getElementById('fincaNombre').value = '';
+                    document.getElementById('fincaDireccion').value = '';
+                    document.getElementById('fincaSuperficie').value = '';
+                    
+                    await this.loadFincas();
+                    await this.populateSelects();
+                } catch (error) {
+                    this.showAlert('fincaAlert', 'Error al agregar finca: ' + error.message);
+                    console.error('Error:', error);
+                }
+            },
+
+            async loadFincas() {
+                try {
+                    const fincas = await DB.getFincas();
+                    const listDiv = document.getElementById('fincasList');
+                    
+                    if (fincas.length === 0) {
+                        listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌾</div><p>No hay fincas registradas aún</p></div>';
+                        return;
+                    }
+
+                    listDiv.innerHTML = fincas.map(finca => `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-title">${finca.nombre}</div>
+                                <div class="list-item-subtitle">
+                                    ${finca.direccion} • ${finca.superficie} ha
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn-small btn-delete" onclick="app.deleteFinca('${finca.id}')">Eliminar</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error('Error loading fincas:', error);
+                    document.getElementById('fincasList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Error al cargar fincas</p></div>';
+                }
+            },
+
+            async deleteFinca(fincaId) {
+                if (!confirm('¿Está seguro de eliminar esta finca? Se eliminarán también sus cuarteles y labores asociadas.')) {
+                    return;
+                }
+
+                try {
+                    await DB.deleteFinca(fincaId);
+                    
+                    this.showNotification('✓ Finca eliminada de Google Sheets');
+                    await this.loadFincas();
+                    await this.loadCuarteles();
+                    await this.populateSelects();
+                } catch (error) {
+                    alert('Error al eliminar finca: ' + error.message);
+                    console.error('Error:', error);
+                }
+            },
+
+            addCuartel() {
+                const fincaId = document.getElementById('cuartelFinca').value;
+                const nombre = document.getElementById('cuartelNombre').value.trim();
+                const superficie = document.getElementById('cuartelSuperficie').value;
+                const cultivo = document.getElementById('cuartelCultivo').value;
+                const variedad = document.getElementById('cuartelVariedad').value;
+                let riego = document.getElementById('cuartelRiego').value;
+                const anio = document.getElementById('cuartelAnio').value;
+                const antigranizo = document.getElementById('cuartelAntigranizo').checked;
+
+                if (!fincaId || !nombre || !superficie || !cultivo || !variedad || !riego) {
+                    this.showAlert('cuartelAlert', 'Por favor complete todos los campos obligatorios');
+                    return;
+                }
+
+                if (riego === 'Otro') {
+                    const otroRiego = document.getElementById('cuartelRiegoOtro').value.trim();
+                    if (!otroRiego) {
+                        this.showAlert('cuartelAlert', 'Por favor especifique el sistema de riego');
+                        return;
+                    }
+                    riego = otroRiego;
+                }
+
+                const cuartel = {
+                    id: 'cuartel_' + Date.now(),
+                    userId: this.currentUser.rut,
+                    fincaId,
+                    nombre,
+                    superficie: parseFloat(superficie),
+                    cultivo,
+                    variedad,
+                    sistemaRiego: riego,
+                    anioImplantacion: anio || null,
+                    telaAntigranizo: antigranizo,
+                    createdAt: new Date().toISOString()
+                };
+
+                DB.cuarteles.cuarteles.push(cuartel);
+                DB.save('cuarteles');
+                
+                this.showAlert('cuartelAlert', 'Cuartel agregado exitosamente', 'success');
+                this.showNotification('✓ Cuartel registrado');
+                
+                document.getElementById('cuartelNombre').value = '';
+                document.getElementById('cuartelSuperficie').value = '';
+                document.getElementById('cuartelCultivo').value = '';
+                document.getElementById('cuartelVariedad').value = '';
+                document.getElementById('cuartelRiego').value = '';
+                document.getElementById('cuartelRiegoOtro').value = '';
+                document.getElementById('cuartelAnio').value = '';
+                document.getElementById('cuartelAntigranizo').checked = false;
+                document.getElementById('otroRiegoContainer').style.display = 'none';
+                
+                this.loadCuarteles();
+                this.populateSelects();
+            },
+
+            loadCuarteles() {
+                const cuarteles = DB.cuarteles.cuarteles.filter(c => c.userId === this.currentUser.rut);
+                const listDiv = document.getElementById('cuartelesList');
+                
+                if (cuarteles.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><p>No hay cuarteles registrados aún</p></div>';
+                    return;
+                }
+
+                listDiv.innerHTML = cuarteles.map(cuartel => {
+                    const finca = DB.fincas.fincas.find(f => f.id === cuartel.fincaId);
+                    const fincaNombre = finca ? finca.nombre : 'N/A';
+                    
+                    return `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-title">${cuartel.nombre}</div>
+                                <div class="list-item-subtitle">
+                                    Finca: ${fincaNombre} • ${cuartel.superficie} ha • ${cuartel.cultivo} - ${cuartel.variedad} • Riego: ${cuartel.sistemaRiego}
+                                    ${cuartel.telaAntigranizo ? ' • Con antigranizo' : ''}
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn-small btn-delete" onclick="app.deleteCuartel('${cuartel.id}')">Eliminar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            deleteCuartel(cuartelId) {
+                if (!confirm('¿Está seguro de eliminar este cuartel?')) {
+                    return;
+                }
+
+                DB.cuarteles.cuarteles = DB.cuarteles.cuarteles.filter(c => c.id !== cuartelId);
+                DB.save('cuarteles');
+                
+                this.showNotification('✓ Cuartel eliminado');
+                this.loadCuarteles();
+                this.populateSelects();
+            },
+
+            addLabor() {
+                const tipo = document.getElementById('laborTipo').value;
+                const cuartelId = document.getElementById('laborCuartel').value;
+                const fecha = document.getElementById('laborFecha').value;
+                const observaciones = document.getElementById('laborObservaciones').value.trim();
+
+                if (!tipo || !cuartelId || !fecha) {
+                    this.showAlert('laborAlert', 'Por favor complete los campos obligatorios');
+                    return;
+                }
+
+                const labor = {
+                    id: 'labor_' + Date.now(),
+                    userId: this.currentUser.rut,
+                    tipo,
+                    cuartelId,
+                    fecha,
+                    observaciones,
+                    createdAt: new Date().toISOString()
+                };
+
+                // Add specific fields based on tipo
+                const jornales = document.getElementById('laborJornales');
+                if (jornales) {
+                    labor.jornales = parseFloat(jornales.value) || 0;
+                }
+
+                switch(tipo) {
+                    case 'riego':
+                        labor.tiempo = parseFloat(document.getElementById('laborTiempo').value) || 0;
+                        break;
+
+                    case 'aplicaciones':
+                    case 'fertilizacion':
+                        const prefix = tipo === 'aplicaciones' ? 'prod' : 'fert';
+                        const checkboxes = document.querySelectorAll(`#${tipo === 'aplicaciones' ? 'productosAplicacionContainer' : 'productosFertilizacionContainer'} input[type="checkbox"]:checked`);
+                        
+                        labor.productos = [];
+                        checkboxes.forEach(cb => {
+                            const productoId = cb.id.replace(`${prefix}_`, '');
+                            const dosisInput = document.querySelector(`#dosis_${prefix}_${productoId} .dosis-input`);
+                            labor.productos.push({
+                                nombre: cb.value,
+                                dosis: dosisInput ? dosisInput.value : ''
+                            });
+                        });
+
+                        if (labor.productos.length === 0) {
+                            this.showAlert('laborAlert', 'Por favor seleccione al menos un producto');
+                            return;
+                        }
+                        break;
+
+                    case 'labranzas':
+                        labor.equipo = document.getElementById('laborEquipo').value;
+                        if (!labor.equipo) {
+                            this.showAlert('laborAlert', 'Por favor seleccione un equipo');
+                            return;
+                        }
+                        break;
+
+                    case 'cosecha':
+                        labor.kgCosechados = parseFloat(document.getElementById('laborKgCosechados').value) || 0;
+                        if (labor.kgCosechados === 0) {
+                            this.showAlert('laborAlert', 'Por favor ingrese los kg cosechados');
+                            return;
+                        }
+                        break;
+                }
+
+                DB.labores.labores.push(labor);
+                DB.save('labores');
+                
+                this.showAlert('laborAlert', 'Labor registrada exitosamente', 'success');
+                this.showNotification('✓ Labor registrada');
+                
+                // Clear form
+                document.getElementById('laborTipo').value = '';
+                document.getElementById('laborCuartel').value = '';
+                document.getElementById('laborObservaciones').value = '';
+                document.getElementById('laborFecha').value = new Date().toISOString().split('T')[0];
+                document.getElementById('laborConditionalFields').innerHTML = '';
+                
+                this.loadLabores();
+            },
+
+
+            deleteLabor(laborId) {
+                if (!confirm('¿Está seguro de eliminar esta labor?')) {
+                    return;
+                }
+
+                DB.labores.labores = DB.labores.labores.filter(l => l.id !== laborId);
+                DB.save('labores');
+                
+                this.showNotification('✓ Labor eliminada');
+                this.loadLabores();
+            },
+            loadLabores() {
+                const labores = DB.labores.labores.filter(l => l.userId === this.currentUser.rut);
+                const listDiv = document.getElementById('laboresList');
+                
+                if (labores.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No hay labores registradas aún</p></div>';
+                    return;
+                }
+
+                labores.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                const recentLabores = labores.slice(0, 10);
+
+                listDiv.innerHTML = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Finca/Cuartel</th>
+                                    <th>Detalles</th>
+                                    <th>Jornales</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${recentLabores.map(labor => {
+                                    const cuartel = DB.cuarteles.cuarteles.find(c => c.id === labor.cuartelId);
+                                    const finca = cuartel ? DB.fincas.fincas.find(f => f.id === cuartel.fincaId) : null;
+                                    
+                                    let detalles = '';
+                                    switch(labor.tipo) {
+                                        case 'riego':
+                                            detalles = `${labor.tiempo}h`;
+                                            break;
+                                        case 'aplicaciones':
+                                        case 'fertilizacion':
+                                            detalles = labor.productos.map(p => p.nombre).join(', ');
+                                            break;
+                                        case 'labranzas':
+                                            detalles = labor.equipo;
+                                            break;
+                                        case 'cosecha':
+                                            detalles = `${labor.kgCosechados} kg`;
+                                            break;
+                                    }
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${new Date(labor.fecha).toLocaleDateString('es-AR')}</td>
+                                            <td><span class="badge badge-${labor.tipo}">${labor.tipo}</span></td>
+                                            <td>${finca ? finca.nombre : 'N/A'} / ${cuartel ? cuartel.nombre : 'N/A'}</td>
+                                            <td>${detalles}</td>
+                                            <td>${labor.jornales || '-'}</td>
+                                            <td>
+                                                <button class="btn-small btn-delete" onclick="app.deleteLabor('${labor.id}')">Eliminar</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+
+            filterLabores() {
+                const tipo = document.getElementById('consultaTipo').value;
+                const cuartelId = document.getElementById('consultaCuartel').value;
+                const fechaDesde = document.getElementById('consultaFechaDesde').value;
+                const fechaHasta = document.getElementById('consultaFechaHasta').value;
+
+                let labores = DB.labores.labores.filter(l => l.userId === this.currentUser.rut);
+
+                if (tipo) labores = labores.filter(l => l.tipo === tipo);
+                if (cuartelId) labores = labores.filter(l => l.cuartelId === cuartelId);
+                if (fechaDesde) labores = labores.filter(l => l.fecha >= fechaDesde);
+                if (fechaHasta) labores = labores.filter(l => l.fecha <= fechaHasta);
+
+                labores.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+                // Store for export
+                this.currentFilteredData = labores;
+
+                const resultsDiv = document.getElementById('consultaResults');
+                
+                if (labores.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No se encontraron labores con los filtros seleccionados</p></div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Finca</th>
+                                    <th>Cuartel</th>
+                                    <th>Detalles</th>
+                                    <th>Jornales</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${labores.map(labor => {
+                                    const cuartel = DB.cuarteles.cuarteles.find(c => c.id === labor.cuartelId);
+                                    const finca = cuartel ? DB.fincas.fincas.find(f => f.id === cuartel.fincaId) : null;
+                                    
+                                    let detalles = '';
+                                    switch(labor.tipo) {
+                                        case 'riego':
+                                            detalles = `Tiempo: ${labor.tiempo}h`;
+                                            break;
+                                        case 'aplicaciones':
+                                        case 'fertilizacion':
+                                            detalles = labor.productos.map(p => `${p.nombre}${p.dosis ? ` (${p.dosis})` : ''}`).join('; ');
+                                            break;
+                                        case 'labranzas':
+                                            detalles = `Equipo: ${labor.equipo}`;
+                                            break;
+                                        case 'cosecha':
+                                            detalles = `Cosecha: ${labor.kgCosechados} kg`;
+                                            break;
+                                    }
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${new Date(labor.fecha).toLocaleDateString('es-AR')}</td>
+                                            <td><span class="badge badge-${labor.tipo}">${labor.tipo}</span></td>
+                                            <td>${finca ? finca.nombre : 'N/A'}</td>
+                                            <td>${cuartel ? cuartel.nombre : 'N/A'}</td>
+                                            <td>${detalles}</td>
+                                            <td>${labor.jornales || '-'}</td>
+                                            <td>${labor.observaciones || '-'}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+
+            populateSelects() {
+                const fincas = DB.fincas.fincas.filter(f => f.userId === this.currentUser.rut);
+                const cuarteles = DB.cuarteles.cuarteles.filter(c => c.userId === this.currentUser.rut);
+
+                const fincaSelect = document.getElementById('cuartelFinca');
+                fincaSelect.innerHTML = '<option value="">-- Seleccione una finca --</option>' +
+                    fincas.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+
+                const cuartelOptions = cuarteles.map(c => {
+                    const finca = DB.fincas.fincas.find(f => f.id === c.fincaId);
+                    return `<option value="${c.id}">${finca ? finca.nombre : 'N/A'} - ${c.nombre}</option>`;
+                }).join('');
+
+                document.getElementById('laborCuartel').innerHTML = '<option value="">-- Seleccione un cuartel --</option>' + cuartelOptions;
+                document.getElementById('consultaCuartel').innerHTML = '<option value="">Todos los cuarteles</option>' + cuartelOptions;
+            },
+
+            exportToExcel() {
+                if (this.currentFilteredData.length === 0) {
+                    this.showNotification('⚠ No hay datos para exportar');
+                    return;
+                }
+
+                // Prepare data for Excel
+                const excelData = this.currentFilteredData.map(labor => {
+                    const cuartel = DB.cuarteles.cuarteles.find(c => c.id === labor.cuartelId);
+                    const finca = cuartel ? DB.fincas.fincas.find(f => f.id === cuartel.fincaId) : null;
+                    
+                    const row = {
+                        'Fecha': new Date(labor.fecha).toLocaleDateString('es-AR'),
+                        'Tipo': labor.tipo,
+                        'Finca': finca ? finca.nombre : 'N/A',
+                        'Cuartel': cuartel ? cuartel.nombre : 'N/A',
+                        'Cultivo': cuartel ? cuartel.cultivo : 'N/A',
+                        'Variedad': cuartel ? cuartel.variedad : 'N/A'
+                    };
+
+                    // Add specific fields
+                    switch(labor.tipo) {
+                        case 'riego':
+                            row['Tiempo (h)'] = labor.tiempo || '';
+                            break;
+                        case 'aplicaciones':
+                        case 'fertilizacion':
+                            row['Productos'] = labor.productos.map(p => p.nombre).join(', ');
+                            row['Dosis'] = labor.productos.map(p => p.dosis).join(', ');
+                            break;
+                        case 'labranzas':
+                            row['Equipo'] = labor.equipo || '';
+                            break;
+                        case 'cosecha':
+                            row['Kg Cosechados'] = labor.kgCosechados || '';
+                            break;
+                    }
+
+                    row['Jornales'] = labor.jornales || '';
+                    row['Observaciones'] = labor.observaciones || '';
+
+                    return row;
+                });
+
+                // Create workbook
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Labores");
+
+                // Generate filename
+                const filename = `labores_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+                // Save file
+                XLSX.writeFile(wb, filename);
+                
+                this.showNotification('✓ Excel exportado exitosamente');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
