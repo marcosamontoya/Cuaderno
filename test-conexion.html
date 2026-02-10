@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Conexión Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #00ff00;
+        }
+        .resultado {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #00ff00;
+        }
+        .error {
+            color: #ff0000;
+            border-color: #ff0000;
+        }
+        .success {
+            color: #00ff00;
+            border-color: #00ff00;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        h1 {
+            color: #00ff00;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test de Conexión Supabase</h1>
+    
+    <div class="resultado">
+        <h3>Configuración:</h3>
+        <pre id="config">Cargando...</pre>
+    </div>
+    
+    <button onclick="testConexionBasica()">1. Test Conexión Básica</button>
+    <button onclick="testTablas()">2. Test Tablas</button>
+    <button onclick="testInsercion()">3. Test Inserción</button>
+    
+    <div id="resultados"></div>
+    
+    <script>
+        // Configuración - DEBE COINCIDIR CON config-supabase.js
+        const SUPABASE_URL = 'https://ioycrbykhbfxudumrcsi.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_AC7lgoV5Ok4WXXZR3ZoJ3Q_U3OrlYc3';
+        
+        // Mostrar configuración
+        document.getElementById('config').textContent = `
+URL: ${SUPABASE_URL}
+Key: ${SUPABASE_KEY.substring(0, 30)}...
+Key Length: ${SUPABASE_KEY.length} caracteres
+        `;
+        
+        // Crear cliente Supabase
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        function mostrarResultado(titulo, contenido, esError = false) {
+            const div = document.createElement('div');
+            div.className = `resultado ${esError ? 'error' : 'success'}`;
+            div.innerHTML = `
+                <h3>${esError ? '❌' : '✅'} ${titulo}</h3>
+                <pre>${contenido}</pre>
+            `;
+            document.getElementById('resultados').appendChild(div);
+        }
+        
+        async function testConexionBasica() {
+            document.getElementById('resultados').innerHTML = '';
+            
+            try {
+                mostrarResultado('Iniciando test...', 'Intentando conectar con Supabase...');
+                
+                const { data, error } = await supabaseClient
+                    .from('usuarios')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    mostrarResultado(
+                        'Error de Conexión',
+                        `Código: ${error.code}
+Mensaje: ${error.message}
+Detalles: ${error.details || 'N/A'}
+Hint: ${error.hint || 'N/A'}`,
+                        true
+                    );
+                } else {
+                    mostrarResultado(
+                        'Conexión Exitosa',
+                        `La conexión con Supabase funciona correctamente.
+La tabla 'usuarios' es accesible.`
+                    );
+                }
+            } catch (e) {
+                mostrarResultado(
+                    'Error General',
+                    `Error: ${e.message}
+Stack: ${e.stack}`,
+                    true
+                );
+            }
+        }
+        
+        async function testTablas() {
+            document.getElementById('resultados').innerHTML = '';
+            
+            const tablas = ['usuarios', 'fincas', 'cuarteles', 'labores'];
+            
+            for (const tabla of tablas) {
+                try {
+                    const { data, error, count } = await supabaseClient
+                        .from(tabla)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        mostrarResultado(
+                            `Tabla: ${tabla}`,
+                            `❌ ERROR: ${error.message}`,
+                            true
+                        );
+                    } else {
+                        mostrarResultado(
+                            `Tabla: ${tabla}`,
+                            `✅ OK - Registros: ${count || 0}`
+                        );
+                    }
+                } catch (e) {
+                    mostrarResultado(
+                        `Tabla: ${tabla}`,
+                        `❌ EXCEPCIÓN: ${e.message}`,
+                        true
+                    );
+                }
+                
+                // Pequeña pausa entre requests
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        async function testInsercion() {
+            document.getElementById('resultados').innerHTML = '';
+            
+            try {
+                const testUser = {
+                    rut: 'TEST-' + Date.now(),
+                    nombre: 'Usuario de Prueba',
+                    password: 'test123'
+                };
+                
+                mostrarResultado('Intentando insertar...', JSON.stringify(testUser, null, 2));
+                
+                const { data, error } = await supabaseClient
+                    .from('usuarios')
+                    .insert([testUser])
+                    .select();
+                
+                if (error) {
+                    mostrarResultado(
+                        'Error en Inserción',
+                        `Código: ${error.code}
+Mensaje: ${error.message}
+Detalles: ${error.details || 'N/A'}`,
+                        true
+                    );
+                } else {
+                    mostrarResultado(
+                        'Inserción Exitosa',
+                        `Usuario creado correctamente:
+${JSON.stringify(data, null, 2)}`
+                    );
+                    
+                    // Limpiar - eliminar el usuario de prueba
+                    await supabaseClient
+                        .from('usuarios')
+                        .delete()
+                        .eq('rut', testUser.rut);
+                    
+                    mostrarResultado('Limpieza', 'Usuario de prueba eliminado');
+                }
+            } catch (e) {
+                mostrarResultado(
+                    'Error General',
+                    `Error: ${e.message}`,
+                    true
+                );
+            }
+        }
+        
+        // Ejecutar test básico al cargar
+        window.addEventListener('load', () => {
+            setTimeout(testConexionBasica, 1000);
+        });
+    </script>
+</body>
+</html>
