@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de Instalación - AgroLabor Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .config-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .test-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .test-icon {
+            font-size: 1.5rem;
+            min-width: 30px;
+        }
+        
+        .test-text {
+            flex: 1;
+        }
+        
+        .test-label {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .test-detail {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        
+        .status-pending { color: #ffa500; }
+        .status-success { color: #28a745; }
+        .status-error { color: #dc3545; }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .summary {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .summary.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .summary.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .help-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+        
+        .help-title {
+            font-weight: 600;
+            color: #1976D2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .help-text {
+            font-size: 0.9rem;
+            color: #555;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Validador de Instalación</h1>
+        <div class="subtitle">AgroLabor Mendoza - Supabase Edition</div>
+        
+        <div class="config-section">
+            <div class="config-title">📝 Configuración de Supabase</div>
+            <div class="input-group">
+                <label for="supabaseUrl">Project URL:</label>
+                <input 
+                    type="text" 
+                    id="supabaseUrl" 
+                    value="https://ioycrbykhbfxudumrcsi.supabase.co"
+                    placeholder="https://tu-proyecto.supabase.co"
+                >
+            </div>
+            <div class="input-group">
+                <label for="supabaseKey">Anon/Public Key:</label>
+                <input 
+                    type="text" 
+                    id="supabaseKey" 
+                    value="sb_publishable_AC7lgoV5Ok4WXXZR3ZoJ3Q_U3OrlYc3"
+                    placeholder="sb_publishable_... o eyJ..."
+                >
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">1. Validación de Configuración</div>
+            <div id="config-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. Conexión con Supabase</div>
+            <div id="connection-tests"></div>
+        </div>
+        
+        <button class="btn" id="runTestsBtn" onclick="runAllTests()">
+            🚀 Ejecutar Todas las Pruebas
+        </button>
+        
+        <div id="summary" style="display: none;"></div>
+        
+        <div class="help-box">
+            <div class="help-title">💡 Sobre este validador</div>
+            <div class="help-text">
+                Este validador verifica que tu configuración de Supabase sea correcta y que 
+                puedas conectarte exitosamente. Las credenciales ya están pre-llenadas con 
+                las que configuramos anteriormente.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            config: [],
+            connection: []
+        };
+        
+        async function runAllTests() {
+            document.getElementById('runTestsBtn').disabled = true;
+            document.getElementById('summary').style.display = 'none';
+            
+            testResults = { config: [], connection: [] };
+            
+            await testConfig();
+            await testConnection();
+            
+            showSummary();
+            document.getElementById('runTestsBtn').disabled = false;
+        }
+        
+        async function testConfig() {
+            const container = document.getElementById('config-tests');
+            container.innerHTML = '';
+            
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            // Test 1: URL válida
+            const urlValid = url && 
+                             url !== 'TU_SUPABASE_URL_AQUI' &&
+                             (url.includes('.supabase.co') || url.includes('supabase'));
+            
+            const result1 = {
+                success: urlValid,
+                message: urlValid ? 
+                    `URL configurada: ${url.substring(0, 40)}...` : 
+                    'URL no configurada o inválida'
+            };
+            testResults.config.push(result1);
+            
+            container.innerHTML += `
+                <div class="test-item">
+                    <div class="test-icon ${result1.success ? 'status-success' : 'status-error'}">
+                        ${result1.success ? '✅' : '❌'}
+                    </div>
+                    <div class="test-text">
+                        <div class="test-label">URL de Supabase</div>
+                        <div class="test-detail">${result1.message}</div>
+                    </div>
+                </div>
+            `;
+            
+            await sleep(300);
+            
+            // Test 2: Key válida
+            const keyValid = key && 
+                            key !== 'TU_SUPABASE_ANON_KEY_AQUI' &&
+                            key.length > 30;
+            
+            const result2 = {
+                success: keyValid,
+                message: keyValid ? 
+                    'Clave de API configurada correctamente' : 
+                    'Clave de API no configurada o inválida'
+            };
+            testResults.config.push(result2);
+            
+            container.innerHTML += `
+                <div class="test-item">
+                    <div class="test-icon ${result2.success ? 'status-success' : 'status-error'}">
+                        ${result2.success ? '✅' : '❌'}
+                    </div>
+                    <div class="test-text">
+                        <div class="test-label">Clave de API (anon key)</div>
+                        <div class="test-detail">${result2.message}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function testConnection() {
+            const container = document.getElementById('connection-tests');
+            container.innerHTML = '<div class="test-item"><div class="test-icon status-pending">⏳</div><div class="test-text"><div class="test-label">Probando conexión...</div></div></div>';
+            
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            if (!url || !key || url === 'TU_SUPABASE_URL_AQUI' || key === 'TU_SUPABASE_ANON_KEY_AQUI') {
+                const result = {
+                    success: false,
+                    message: 'No se puede probar conexión sin configuración válida'
+                };
+                testResults.connection.push(result);
+                
+                container.innerHTML = `
+                    <div class="test-item">
+                        <div class="test-icon status-error">❌</div>
+                        <div class="test-text">
+                            <div class="test-label">Conexión con Supabase</div>
+                            <div class="test-detail">${result.message}</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const sb = supabase.createClient(url, key);
+                
+                // Test de conexión
+                const { data, error } = await sb
+                    .from('usuarios')
+                    .select('count', { count: 'exact', head: true });
+                
+                const result = {
+                    success: !error,
+                    message: !error ? 
+                        'Conexión exitosa con Supabase' : 
+                        `Error de conexión: ${error.message}`
+                };
+                testResults.connection.push(result);
+                
+                container.innerHTML = `
+                    <div class="test-item">
+                        <div class="test-icon ${result.success ? 'status-success' : 'status-error'}">
+                            ${result.success ? '✅' : '❌'}
+                        </div>
+                        <div class="test-text">
+                            <div class="test-label">Conexión con Supabase</div>
+                            <div class="test-detail">${result.message}</div>
+                            ${!result.success ? `
+                                <div class="code-block" style="margin-top: 0.5rem;">
+                                    ${error.message}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                if (result.success) {
+                    // Test de tablas
+                    const tables = ['usuarios', 'fincas', 'cuarteles', 'labores'];
+                    for (const table of tables) {
+                        const { error: tableError } = await sb
+                            .from(table)
+                            .select('count', { count: 'exact', head: true });
+                        
+                        const tableResult = {
+                            success: !tableError,
+                            message: !tableError ? 
+                                `Tabla '${table}' accesible` : 
+                                `Tabla '${table}' no encontrada`
+                        };
+                        testResults.connection.push(tableResult);
+                        
+                        container.innerHTML += `
+                            <div class="test-item">
+                                <div class="test-icon ${tableResult.success ? 'status-success' : 'status-error'}">
+                                    ${tableResult.success ? '✅' : '❌'}
+                                </div>
+                                <div class="test-text">
+                                    <div class="test-label">Tabla: ${table}</div>
+                                    <div class="test-detail">${tableResult.message}</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        await sleep(200);
+                    }
+                }
+                
+            } catch (error) {
+                const result = {
+                    success: false,
+                    message: `Error al conectar: ${error.message}`
+                };
+                testResults.connection.push(result);
+                
+                container.innerHTML = `
+                    <div class="test-item">
+                        <div class="test-icon status-error">❌</div>
+                        <div class="test-text">
+                            <div class="test-label">Conexión con Supabase</div>
+                            <div class="test-detail">${result.message}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function showSummary() {
+            const allTests = [
+                ...testResults.config,
+                ...testResults.connection
+            ];
+            
+            const totalTests = allTests.length;
+            const passedTests = allTests.filter(t => t.success).length;
+            const failedTests = totalTests - passedTests;
+            
+            const summaryDiv = document.getElementById('summary');
+            let className = 'success';
+            let message = '';
+            let recommendations = '';
+            
+            if (failedTests === 0) {
+                className = 'success';
+                message = '🎉 ¡Excelente! Todas las pruebas pasaron correctamente.';
+                recommendations = 'Tu instalación está lista. Puedes abrir index.html y empezar a usar la aplicación.';
+            } else {
+                className = 'error';
+                message = `❌ ${failedTests} prueba(s) fallaron de ${totalTests}.`;
+                recommendations = 'Revisa los errores marcados arriba. Si las tablas no existen, ejecuta schema.sql en Supabase.';
+            }
+            
+            summaryDiv.className = `summary ${className}`;
+            summaryDiv.innerHTML = `
+                <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">${message}</div>
+                <div style="font-size: 0.95rem; font-weight: normal;">${recommendations}</div>
+                <div style="margin-top: 1rem; font-size: 0.9rem;">
+                    Pruebas pasadas: ${passedTests}/${totalTests}
+                </div>
+            `;
+            summaryDiv.style.display = 'block';
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Ejecutar automáticamente al cargar
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 500);
+        });
+    </script>
+</body>
+</html>
