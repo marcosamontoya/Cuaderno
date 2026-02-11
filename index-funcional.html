@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroLabor Mendoza - Supabase Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Supabase Integration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config-supabase.js"></script>
+    <script src="supabase-service.js"></script>
+    <style>
+        :root {
+            --primary: #2d5016;
+            --primary-light: #4a7c2a;
+            --primary-dark: #1a3009;
+            --secondary: #d4a574;
+            --accent: #e8b86d;
+            --bg-main: #faf8f3;
+            --bg-card: #ffffff;
+            --text-primary: #2a2a2a;
+            --text-secondary: #666666;
+            --border: #e0ddd5;
+            --success: #4a7c2a;
+            --danger: #c94c4c;
+            --shadow: rgba(45, 80, 22, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 12px var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05));
+            pointer-events: none;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            overflow: hidden;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            opacity: 0.95;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Auth Screen */
+        .auth-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(212, 165, 116, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(232, 184, 109, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .auth-logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .logo-upload-section {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .logo-upload-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logo-upload-btn:hover {
+            background: var(--secondary);
+        }
+
+        .auth-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input, select, textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: transparent;
+            color: var(--primary);
+            padding: 1rem;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.75rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .alert {
+            padding: 0.9rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(74, 124, 42, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .alert-danger {
+            background: rgba(201, 76, 76, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .alert-info {
+            background: rgba(45, 80, 22, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .card-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+        }
+
+        .btn-export {
+            background: var(--secondary);
+            color: var(--text-primary);
+            margin-left: 1rem;
+        }
+
+        .btn-export:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .list-item {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .list-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .list-item-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select {
+            background: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .btn-select:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #a33d3d;
+            transform: translateY(-1px);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-dark);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: var(--bg-main);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .filter-section {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .badge-aplicaciones {
+            background: rgba(74, 124, 42, 0.15);
+            color: var(--primary);
+        }
+
+        .badge-labranzas {
+            background: rgba(212, 165, 116, 0.25);
+            color: #8b6e4e;
+        }
+
+        .badge-riego {
+            background: rgba(52, 152, 219, 0.15);
+            color: #2980b9;
+        }
+
+        .badge-fertilizacion {
+            background: rgba(255, 193, 7, 0.2);
+            color: #c17900;
+        }
+
+        .badge-cosecha {
+            background: rgba(232, 184, 109, 0.25);
+            color: #c07600;
+        }
+
+        .multi-select-container {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            background: var(--bg-main);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .multi-select-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .multi-select-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .multi-select-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .dosis-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .dosis-input-group input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .conditional-fields {
+            background: var(--bg-main);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .conditional-fields-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .auth-card {
+                padding: 2rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                padding: 0.8rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .list-item {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .list-item-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-export {
+                margin-left: 0;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container"></div>
+    <script>
+        // ==================== CONFIGURACIÓN SUPABASE ====================
+        let supabaseService;
+        let currentUser = null;
+        const localCache = { fincas: [], cuarteles: [], labores: [] };
+        
+        function initSupabase() {
+            try {
+                if (typeof SUPABASE_CONFIG === 'undefined') {
+                    alert('ERROR: config-supabase.js no encontrado.\nAsegúrate de que esté en la misma carpeta.');
+                    return false;
+                }
+                supabaseService = new SupabaseService(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                console.log('✓ Supabase inicializado');
+                return true;
+            } catch (error) {
+                console.error('✗ Error Supabase:', error);
+                alert('Error de conexión. Verifica config-supabase.js');
+                return false;
+            }
+        }
+        
+        // ==================== GESTIÓN DE MENÚS ====================
+        const MENUS = {
+            cultivos: [],
+            variedades: {},
+            sistemasRiego: [],
+            productosAplicacion: [],
+            productosFertilizacion: [],
+            equiposLabranza: [],
+            
+            async load() {
+                try {
+                    const response = await fetch('config_menus.json');
+                    if (!response.ok) throw new Error('No se pudo cargar config_menus.json');
+                    const data = await response.json();
+                    
+                    this.cultivos = data.cultivos || [];
+                    this.variedades = data.variedadesPorCultivo || {};
+                    this.sistemasRiego = data.sistemasRiego || [];
+                    this.productosAplicacion = data.productosAplicacion || [];
+                    this.productosFertilizacion = data.productosFertilizacion || [];
+                    this.equiposLabranza = data.equiposLabranza || [];
+                    
+                    console.log('✓ Menús cargados');
+                } catch (error) {
+                    console.error('Error cargando menús:', error);
+                    alert('Error: config_menus.json no encontrado');
+                }
+            }
+        };
+        
+        // ==================== APLICACIÓN PRINCIPAL ====================
+        const app = {
+            currentFilteredData: [],
+            
+            async init() {
+                if (!initSupabase()) return;
+                await MENUS.load();
+                this.checkAuth();
+            },
+            
+            checkAuth() {
+                const saved = localStorage.getItem('currentUser');
+                if (saved) {
+                    currentUser = JSON.parse(saved);
+                    this.showApp();
+                } else {
+                    this.showLogin();
+                }
+            },
+            
+            showLogin() {
+                document.getElementById('app').innerHTML = `
+                    <div class="auth-screen">
+                        <div class="auth-card">
+                            <div class="auth-logo">
+                                <div class="auth-logo-icon">${LOGO_URL ? `<img src="${LOGO_URL}" alt="Logo">` : '🌾'}</div>
+                                <h1 style="font-family: 'Crimson Pro', serif; color: #2d5016; margin-top: 1rem;">AgroLabor Mendoza</h1>
+                                <p style="color: #666; margin-top: 0.5rem;">Sistema de Registro de Labores Agrícolas</p>
+                            </div>
+                            <div id="authAlert" style="display: none;"></div>
+                            <div class="form-group">
+                                <label>RUT</label>
+                                <input type="text" id="loginRut" placeholder="12-34567890-1">
+                            </div>
+                            <div class="form-group">
+                                <label>Contraseña</label>
+                                <input type="password" id="loginPassword" placeholder="••••••">
+                            </div>
+                            <button class="btn btn-primary" onclick="app.login()">Ingresar</button>
+                            <div style="text-align: center; margin-top: 1.5rem;">
+                                <a href="#" onclick="app.showRegister(); return false;" style="color: #2d5016; text-decoration: none; font-weight: 500;">Crear Nueva Cuenta</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            
+            showRegister() {
+                document.getElementById('app').innerHTML = `
+                    <div class="auth-screen">
+                        <div class="auth-card">
+                            <div class="auth-logo">
+                                <div class="auth-logo-icon">${LOGO_URL ? `<img src="${LOGO_URL}" alt="Logo">` : '🌾'}</div>
+                                <h1 style="font-family: 'Crimson Pro', serif; color: #2d5016; margin-top: 1rem;">Crear Cuenta</h1>
+                            </div>
+                            <div id="authAlert" style="display: none;"></div>
+                            <div class="form-group">
+                                <label>RUT</label>
+                                <input type="text" id="regRut" placeholder="12-34567890-1">
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre Completo</label>
+                                <input type="text" id="regNombre" placeholder="Juan Pérez">
+                            </div>
+                            <div class="form-group">
+                                <label>Contraseña</label>
+                                <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres">
+                            </div>
+                            <button class="btn btn-primary" onclick="app.register()">Registrarse</button>
+                            <div style="text-align: center; margin-top: 1.5rem;">
+                                <a href="#" onclick="app.showLogin(); return false;" style="color: #2d5016; text-decoration: none; font-weight: 500;">Ya tengo cuenta</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            
+            async register() {
+                const rut = document.getElementById('regRut').value.trim();
+                const nombre = document.getElementById('regNombre').value.trim();
+                const password = document.getElementById('regPassword').value;
+
+                if (!rut || !nombre || !password) {
+                    this.showAuthAlert('Complete todos los campos');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    this.showAuthAlert('La contraseña debe tener al menos 6 caracteres');
+                    return;
+                }
+
+                const exists = await supabaseService.checkUserExists(rut);
+                if (exists) {
+                    this.showAuthAlert('El RUT ya está registrado');
+                    return;
+                }
+
+                const result = await supabaseService.registerUser(rut, nombre, password);
+                
+                if (result.success) {
+                    this.showAuthAlert('Usuario registrado exitosamente. Ya puede iniciar sesión.', 'success');
+                    setTimeout(() => this.showLogin(), 2000);
+                } else {
+                    this.showAuthAlert('Error al registrar: ' + result.error);
+                }
+            },
+            
+            async login() {
+                const rut = document.getElementById('loginRut').value.trim();
+                const password = document.getElementById('loginPassword').value;
+
+                if (!rut || !password) {
+                    this.showAuthAlert('Ingrese RUT y contraseña');
+                    return;
+                }
+
+                const result = await supabaseService.loginUser(rut, password);
+                
+                if (result.success) {
+                    currentUser = result.data;
+                    localStorage.setItem('currentUser', JSON.stringify(result.data));
+                    this.showApp();
+                } else {
+                    this.showAuthAlert('RUT o contraseña incorrectos');
+                }
+            },
+            
+            logout() {
+                if (confirm('¿Desea cerrar sesión?')) {
+                    currentUser = null;
+                    localStorage.removeItem('currentUser');
+                    localCache.fincas = [];
+                    localCache.cuarteles = [];
+                    localCache.labores = [];
+                    this.showLogin();
+                }
+            },
+            
+            async showApp() {
+                await this.loadInitialData();
+                
+                document.getElementById('app').innerHTML = `
+                    <div class="header">
+                        <div class="header-content">
+                            <div class="logo">
+                                <div class="logo-icon">${LOGO_URL ? `<img src="${LOGO_URL}" alt="Logo">` : '🌾'}</div>
+                                <span>AgroLabor Mendoza</span>
+                            </div>
+                            <div class="user-info">
+                                <span class="user-name">${currentUser.nombre}</span>
+                                <button class="btn-logout" onclick="app.logout()">Cerrar Sesión</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="main-content">
+                        <div class="tabs">
+                            <button class="tab-btn active" onclick="app.showTab('fincas')">🌾 Fincas</button>
+                            <button class="tab-btn" onclick="app.showTab('cuarteles')">📍 Cuarteles</button>
+                            <button class="tab-btn" onclick="app.showTab('labores')">📝 Labores</button>
+                            <button class="tab-btn" onclick="app.showTab('consultas')">📊 Consultas</button>
+                        </div>
+                        
+                        <div class="content-wrapper">
+                            <div id="fincas-tab" class="tab-content active">
+                                <div class="content-header">
+                                    <h2>Gestión de Fincas</h2>
+                                </div>
+                                <div class="card">
+                                    <h3>Agregar Nueva Finca</h3>
+                                    <div id="fincaAlert" style="display: none;"></div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Nombre de la Finca *</label>
+                                            <input type="text" id="fincaNombre" placeholder="Ej: Finca Los Álamos">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Dirección *</label>
+                                            <input type="text" id="fincaDireccion" placeholder="Ej: Ruta 7 Km 1025">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Superficie (ha) *</label>
+                                            <input type="number" id="fincaSuperficie" step="0.01" placeholder="Ej: 25.5">
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="app.addFinca()">Agregar Finca</button>
+                                </div>
+                                
+                                <div class="card">
+                                    <h3>Mis Fincas</h3>
+                                    <div id="fincasList"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="cuarteles-tab" class="tab-content">
+                                <div class="content-header">
+                                    <h2>Gestión de Cuarteles</h2>
+                                </div>
+                                <div class="card">
+                                    <h3>Agregar Nuevo Cuartel</h3>
+                                    <div id="cuartelAlert" style="display: none;"></div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Finca *</label>
+                                            <select id="cuartelFinca">
+                                                <option value="">-- Seleccione --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Nombre del Cuartel *</label>
+                                            <input type="text" id="cuartelNombre" placeholder="Ej: Cuartel Norte">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Superficie (ha) *</label>
+                                            <input type="number" id="cuartelSuperficie" step="0.01" placeholder="Ej: 5.2">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Cultivo *</label>
+                                            <select id="cuartelCultivo" onchange="app.updateVariedades()">
+                                                <option value="">-- Seleccione --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Variedad *</label>
+                                            <select id="cuartelVariedad">
+                                                <option value="">-- Primero seleccione cultivo --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Sistema de Riego *</label>
+                                            <select id="cuartelRiego" onchange="app.toggleOtroRiego()">
+                                                <option value="">-- Seleccione --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" id="otroRiegoContainer" style="display: none;">
+                                            <label>Especificar Sistema de Riego</label>
+                                            <input type="text" id="cuartelRiegoOtro" placeholder="Especifique el sistema">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Año de Implantación</label>
+                                            <input type="number" id="cuartelAnio" placeholder="Ej: 2015">
+                                        </div>
+                                        <div class="form-group">
+                                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                                <input type="checkbox" id="cuartelAntigranizo">
+                                                <span>Tiene Tela Antigranizo</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="app.addCuartel()">Agregar Cuartel</button>
+                                </div>
+                                
+                                <div class="card">
+                                    <h3>Mis Cuarteles</h3>
+                                    <div id="cuartelesList"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="labores-tab" class="tab-content">
+                                <div class="content-header">
+                                    <h2>Registro de Labores</h2>
+                                </div>
+                                <div class="card">
+                                    <h3>Nueva Labor</h3>
+                                    <div id="laborAlert" style="display: none;"></div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Tipo de Labor *</label>
+                                            <select id="laborTipo" onchange="app.updateLaborFields()">
+                                                <option value="">-- Seleccione --</option>
+                                                <option value="riego">🌊 Riego</option>
+                                                <option value="aplicaciones">🌿 Aplicaciones</option>
+                                                <option value="fertilizacion">🌱 Fertilización</option>
+                                                <option value="labranzas">🚜 Labranzas</option>
+                                                <option value="cosecha">🍇 Cosecha</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Cuartel *</label>
+                                            <select id="laborCuartel">
+                                                <option value="">-- Seleccione --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Fecha *</label>
+                                            <input type="date" id="laborFecha" value="${new Date().toISOString().split('T')[0]}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Jornales</label>
+                                            <input type="number" id="laborJornales" placeholder="Número de jornales">
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="laborSpecificFields"></div>
+                                    
+                                    <div class="form-group">
+                                        <label>Observaciones</label>
+                                        <textarea id="laborObservaciones" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                                    </div>
+                                    
+                                    <button class="btn btn-primary" onclick="app.addLabor()">Registrar Labor</button>
+                                </div>
+                                
+                                <div class="card">
+                                    <h3>Últimas Labores Registradas</h3>
+                                    <div id="laboresList"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="consultas-tab" class="tab-content">
+                                <div class="content-header">
+                                    <h2>Consultas y Reportes</h2>
+                                </div>
+                                <div class="card">
+                                    <h3>Filtros de Búsqueda</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Tipo de Labor</label>
+                                            <select id="consultaTipo">
+                                                <option value="">Todas</option>
+                                                <option value="riego">Riego</option>
+                                                <option value="aplicaciones">Aplicaciones</option>
+                                                <option value="fertilizacion">Fertilización</option>
+                                                <option value="labranzas">Labranzas</option>
+                                                <option value="cosecha">Cosecha</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Cuartel</label>
+                                            <select id="consultaCuartel">
+                                                <option value="">Todos</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Fecha Desde</label>
+                                            <input type="date" id="consultaFechaDesde">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Fecha Hasta</label>
+                                            <input type="date" id="consultaFechaHasta">
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <button class="btn btn-primary" onclick="app.filterLabores()">Buscar</button>
+                                        <button class="btn btn-secondary" onclick="app.exportToExcel()">📥 Exportar a Excel</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="card">
+                                    <h3>Resultados</h3>
+                                    <div id="consultaResults"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                this.populateMenus();
+                this.showTab('fincas');
+            },
+            
+            async loadInitialData() {
+                await this.loadFincas();
+                await this.loadCuarteles();
+                await this.loadRecentLabores();
+            },
+            
+            // ==================== GESTIÓN DE FINCAS ====================
+            
+            async addFinca() {
+                const nombre = document.getElementById('fincaNombre').value.trim();
+                const direccion = document.getElementById('fincaDireccion').value.trim();
+                const superficie = document.getElementById('fincaSuperficie').value;
+
+                if (!nombre || !direccion || !superficie) {
+                    this.showAlert('fincaAlert', 'Complete todos los campos obligatorios');
+                    return;
+                }
+
+                const finca = {
+                    user_id: currentUser.rut,
+                    nombre,
+                    direccion,
+                    superficie: parseFloat(superficie)
+                };
+
+                const result = await supabaseService.addFinca(finca);
+                
+                if (result.success) {
+                    this.showAlert('fincaAlert', 'Finca agregada exitosamente', 'success');
+                    this.showNotification('✓ Finca registrada');
+                    
+                    document.getElementById('fincaNombre').value = '';
+                    document.getElementById('fincaDireccion').value = '';
+                    document.getElementById('fincaSuperficie').value = '';
+                    
+                    await this.loadFincas();
+                    await this.populateSelects();
+                } else {
+                    this.showAlert('fincaAlert', 'Error: ' + result.error);
+                }
+            },
+            
+            async loadFincas() {
+                const result = await supabaseService.getFincas(currentUser.rut);
+                
+                if (!result.success) {
+                    console.error('Error cargando fincas:', result.error);
+                    return;
+                }
+                
+                const fincas = result.data;
+                localCache.fincas = fincas;
+                
+                const listDiv = document.getElementById('fincasList');
+                if (!listDiv) return;
+                
+                if (fincas.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌾</div><p>No hay fincas registradas</p></div>';
+                    return;
+                }
+
+                listDiv.innerHTML = fincas.map(finca => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">${finca.nombre}</div>
+                            <div class="list-item-subtitle">${finca.direccion} • ${finca.superficie} ha</div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn-small btn-delete" onclick="app.deleteFinca('${finca.id}')">Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+            
+            async deleteFinca(fincaId) {
+                if (!confirm('¿Eliminar esta finca? Se eliminarán también sus cuarteles y labores.')) {
+                    return;
+                }
+
+                const result = await supabaseService.deleteFinca(fincaId);
+                
+                if (result.success) {
+                    this.showNotification('✓ Finca eliminada');
+                    await this.loadFincas();
+                    await this.loadCuarteles();
+                    await this.populateSelects();
+                } else {
+                    this.showNotification('✗ Error al eliminar');
+                }
+            },
+            
+            // ==================== GESTIÓN DE CUARTELES ====================
+            
+            async addCuartel() {
+                const fincaId = document.getElementById('cuartelFinca').value;
+                const nombre = document.getElementById('cuartelNombre').value.trim();
+                const superficie = document.getElementById('cuartelSuperficie').value;
+                const cultivo = document.getElementById('cuartelCultivo').value;
+                const variedad = document.getElementById('cuartelVariedad').value;
+                let riego = document.getElementById('cuartelRiego').value;
+                const anio = document.getElementById('cuartelAnio').value;
+                const antigranizo = document.getElementById('cuartelAntigranizo').checked;
+
+                if (!fincaId || !nombre || !superficie || !cultivo || !variedad || !riego) {
+                    this.showAlert('cuartelAlert', 'Complete todos los campos obligatorios');
+                    return;
+                }
+
+                let sistemaRiegoOtro = null;
+                if (riego === 'Otro') {
+                    const otroRiego = document.getElementById('cuartelRiegoOtro').value.trim();
+                    if (!otroRiego) {
+                        this.showAlert('cuartelAlert', 'Especifique el sistema de riego');
+                        return;
+                    }
+                    sistemaRiegoOtro = otroRiego;
+                }
+
+                const cuartel = {
+                    user_id: currentUser.rut,
+                    finca_id: fincaId,
+                    nombre,
+                    superficie: parseFloat(superficie),
+                    cultivo,
+                    variedad,
+                    sistema_riego: riego,
+                    sistema_riego_otro: sistemaRiegoOtro,
+                    anio_implantacion: anio ? parseInt(anio) : null,
+                    tela_antigranizo: antigranizo
+                };
+
+                const result = await supabaseService.addCuartel(cuartel);
+                
+                if (result.success) {
+                    this.showAlert('cuartelAlert', 'Cuartel agregado exitosamente', 'success');
+                    this.showNotification('✓ Cuartel registrado');
+                    
+                    document.getElementById('cuartelNombre').value = '';
+                    document.getElementById('cuartelSuperficie').value = '';
+                    document.getElementById('cuartelCultivo').value = '';
+                    document.getElementById('cuartelVariedad').value = '';
+                    document.getElementById('cuartelRiego').value = '';
+                    document.getElementById('cuartelRiegoOtro').value = '';
+                    document.getElementById('cuartelAnio').value = '';
+                    document.getElementById('cuartelAntigranizo').checked = false;
+                    document.getElementById('otroRiegoContainer').style.display = 'none';
+                    
+                    await this.loadCuarteles();
+                    await this.populateSelects();
+                } else {
+                    this.showAlert('cuartelAlert', 'Error: ' + result.error);
+                }
+            },
+            
+            async loadCuarteles() {
+                const result = await supabaseService.getCuarteles(currentUser.rut);
+                
+                if (!result.success) {
+                    console.error('Error cargando cuarteles:', result.error);
+                    return;
+                }
+                
+                const cuarteles = result.data;
+                localCache.cuarteles = cuarteles;
+                
+                const listDiv = document.getElementById('cuartelesList');
+                if (!listDiv) return;
+                
+                if (cuarteles.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><p>No hay cuarteles registrados</p></div>';
+                    return;
+                }
+
+                listDiv.innerHTML = cuarteles.map(cuartel => {
+                    const finca = localCache.fincas.find(f => f.id === cuartel.finca_id);
+                    const fincaNombre = finca ? finca.nombre : 'N/A';
+                    
+                    return `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-title">${cuartel.nombre}</div>
+                                <div class="list-item-subtitle">
+                                    Finca: ${fincaNombre} • ${cuartel.superficie} ha • ${cuartel.cultivo} - ${cuartel.variedad} • ${cuartel.sistema_riego}
+                                    ${cuartel.tela_antigranizo ? ' • Con antigranizo' : ''}
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn-small btn-delete" onclick="app.deleteCuartel('${cuartel.id}')">Eliminar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+            
+            async deleteCuartel(cuartelId) {
+                if (!confirm('¿Eliminar este cuartel?')) return;
+
+                const result = await supabaseService.deleteCuartel(cuartelId);
+                
+                if (result.success) {
+                    this.showNotification('✓ Cuartel eliminado');
+                    await this.loadCuarteles();
+                    await this.populateSelects();
+                } else {
+                    this.showNotification('✗ Error');
+                }
+            },
+            
+            // ==================== GESTIÓN DE LABORES ====================
+            
+            async addLabor() {
+                const tipo = document.getElementById('laborTipo').value;
+                const cuartelId = document.getElementById('laborCuartel').value;
+                const fecha = document.getElementById('laborFecha').value;
+                const jornales = document.getElementById('laborJornales').value;
+                const observaciones = document.getElementById('laborObservaciones').value.trim();
+
+                if (!tipo || !cuartelId || !fecha) {
+                    this.showAlert('laborAlert', 'Complete los campos obligatorios');
+                    return;
+                }
+
+                const labor = {
+                    user_id: currentUser.rut,
+                    cuartel_id: cuartelId,
+                    tipo: tipo,
+                    fecha: fecha,
+                    jornales: jornales ? parseInt(jornales) : null,
+                    observaciones: observaciones || null,
+                    tiempo: null,
+                    productos: null,
+                    equipo: null,
+                    kg_cosechados: null
+                };
+
+                // Campos específicos según tipo
+                switch(tipo) {
+                    case 'riego':
+                        const tiempo = document.getElementById('riegoTiempo').value;
+                        if (!tiempo) {
+                            this.showAlert('laborAlert', 'Ingrese el tiempo de riego');
+                            return;
+                        }
+                        labor.tiempo = parseFloat(tiempo);
+                        break;
+                        
+                    case 'aplicaciones':
+                    case 'fertilizacion':
+                        const productos = [];
+                        document.querySelectorAll(`input[name="${tipo}Producto"]:checked`).forEach(cb => {
+                            const dosis = document.getElementById(`${tipo}Dosis_${cb.value.replace(/\s/g, '_')}`);
+                            productos.push({
+                                nombre: cb.value,
+                                dosis: dosis ? dosis.value.trim() || null : null
+                            });
+                        });
+                        
+                        if (productos.length === 0) {
+                            this.showAlert('laborAlert', 'Seleccione al menos un producto');
+                            return;
+                        }
+                        labor.productos = productos;
+                        break;
+                        
+                    case 'labranzas':
+                        const equipo = document.getElementById('labranzaEquipo').value;
+                        if (!equipo) {
+                            this.showAlert('laborAlert', 'Seleccione el equipo');
+                            return;
+                        }
+                        labor.equipo = equipo;
+                        break;
+                        
+                    case 'cosecha':
+                        const kg = document.getElementById('cosechaKg').value;
+                        if (!kg) {
+                            this.showAlert('laborAlert', 'Ingrese los kg cosechados');
+                            return;
+                        }
+                        labor.kg_cosechados = parseFloat(kg);
+                        break;
+                }
+
+                const result = await supabaseService.addLabor(labor);
+                
+                if (result.success) {
+                    this.showAlert('laborAlert', 'Labor registrada exitosamente', 'success');
+                    this.showNotification('✓ Labor registrada');
+                    
+                    document.getElementById('laborTipo').value = '';
+                    document.getElementById('laborCuartel').value = '';
+                    document.getElementById('laborFecha').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('laborJornales').value = '';
+                    document.getElementById('laborObservaciones').value = '';
+                    document.getElementById('laborSpecificFields').innerHTML = '';
+                    
+                    await this.loadRecentLabores();
+                } else {
+                    this.showAlert('laborAlert', 'Error: ' + result.error);
+                }
+            },
+            
+            async loadRecentLabores() {
+                const result = await supabaseService.getLabores(currentUser.rut);
+                
+                if (!result.success) {
+                    console.error('Error cargando labores:', result.error);
+                    return;
+                }
+                
+                const labores = result.data.slice(0, 10);
+                localCache.labores = result.data;
+                
+                const listDiv = document.getElementById('laboresList');
+                if (!listDiv) return;
+                
+                if (labores.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No hay labores registradas</p></div>';
+                    return;
+                }
+
+                listDiv.innerHTML = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Cuartel</th>
+                                    <th>Detalles</th>
+                                    <th>Jornales</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${labores.map(labor => {
+                                    const cuartel = localCache.cuarteles.find(c => c.id === labor.cuartel_id);
+                                    const finca = cuartel ? localCache.fincas.find(f => f.id === cuartel.finca_id) : null;
+                                    
+                                    let detalles = '';
+                                    switch(labor.tipo) {
+                                        case 'riego':
+                                            detalles = `${labor.tiempo}h`;
+                                            break;
+                                        case 'aplicaciones':
+                                        case 'fertilizacion':
+                                            detalles = labor.productos ? labor.productos.map(p => p.nombre).join(', ') : '';
+                                            break;
+                                        case 'labranzas':
+                                            detalles = labor.equipo || '';
+                                            break;
+                                        case 'cosecha':
+                                            detalles = `${labor.kg_cosechados} kg`;
+                                            break;
+                                    }
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${new Date(labor.fecha).toLocaleDateString('es-AR')}</td>
+                                            <td><span class="badge badge-${labor.tipo}">${labor.tipo}</span></td>
+                                            <td>${finca ? finca.nombre : 'N/A'} / ${cuartel ? cuartel.nombre : 'N/A'}</td>
+                                            <td>${detalles}</td>
+                                            <td>${labor.jornales || '-'}</td>
+                                            <td>
+                                                <button class="btn-small btn-delete" onclick="app.deleteLabor('${labor.id}')">Eliminar</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+            
+            async deleteLabor(laborId) {
+                if (!confirm('¿Eliminar esta labor?')) return;
+
+                const result = await supabaseService.deleteLabor(laborId);
+                
+                if (result.success) {
+                    this.showNotification('✓ Labor eliminada');
+                    await this.loadRecentLabores();
+                } else {
+                    this.showNotification('✗ Error');
+                }
+            },
+            
+            async filterLabores() {
+                const tipo = document.getElementById('consultaTipo').value;
+                const cuartelId = document.getElementById('consultaCuartel').value;
+                const fechaDesde = document.getElementById('consultaFechaDesde').value;
+                const fechaHasta = document.getElementById('consultaFechaHasta').value;
+
+                const filters = {
+                    tipo: tipo || null,
+                    cuartelId: cuartelId || null,
+                    fechaDesde: fechaDesde || null,
+                    fechaHasta: fechaHasta || null
+                };
+
+                const result = await supabaseService.getLabores(currentUser.rut, filters);
+                
+                if (!result.success) {
+                    console.error('Error filtrando labores:', result.error);
+                    return;
+                }
+
+                const labores = result.data;
+                this.currentFilteredData = labores;
+
+                const resultsDiv = document.getElementById('consultaResults');
+                
+                if (labores.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No se encontraron labores</p></div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Finca</th>
+                                    <th>Cuartel</th>
+                                    <th>Detalles</th>
+                                    <th>Jornales</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${labores.map(labor => {
+                                    const cuartel = localCache.cuarteles.find(c => c.id === labor.cuartel_id);
+                                    const finca = cuartel ? localCache.fincas.find(f => f.id === cuartel.finca_id) : null;
+                                    
+                                    let detalles = '';
+                                    switch(labor.tipo) {
+                                        case 'riego':
+                                            detalles = `Tiempo: ${labor.tiempo}h`;
+                                            break;
+                                        case 'aplicaciones':
+                                        case 'fertilizacion':
+                                            detalles = labor.productos ? labor.productos.map(p => `${p.nombre}${p.dosis ? ` (${p.dosis})` : ''}`).join('; ') : '';
+                                            break;
+                                        case 'labranzas':
+                                            detalles = `Equipo: ${labor.equipo || ''}`;
+                                            break;
+                                        case 'cosecha':
+                                            detalles = `Cosecha: ${labor.kg_cosechados} kg`;
+                                            break;
+                                    }
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${new Date(labor.fecha).toLocaleDateString('es-AR')}</td>
+                                            <td><span class="badge badge-${labor.tipo}">${labor.tipo}</span></td>
+                                            <td>${finca ? finca.nombre : 'N/A'}</td>
+                                            <td>${cuartel ? cuartel.nombre : 'N/A'}</td>
+                                            <td>${detalles}</td>
+                                            <td>${labor.jornales || '-'}</td>
+                                            <td>${labor.observaciones || '-'}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+            
+            // ==================== FUNCIONES AUXILIARES ====================
+            
+            updateLaborFields() {
+                const tipo = document.getElementById('laborTipo').value;
+                const container = document.getElementById('laborSpecificFields');
+                
+                if (!tipo) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                let html = '';
+                
+                switch(tipo) {
+                    case 'riego':
+                        html = `
+                            <div class="form-group">
+                                <label>Tiempo de Riego (horas) *</label>
+                                <input type="number" id="riegoTiempo" step="0.1" placeholder="Ej: 8">
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'aplicaciones':
+                        html = `
+                            <div class="card" style="background: #f8f9fa; padding: 1rem; margin: 1rem 0;">
+                                <h4>Productos Aplicados *</h4>
+                                <div class="form-group">
+                                    <input type="text" id="aplicacionesSearch" placeholder="🔍 Buscar productos..." oninput="app.filterProductos('aplicaciones')">
+                                </div>
+                                <div id="aplicacionesProductos" style="max-height: 300px; overflow-y: auto;">
+                                    ${MENUS.productosAplicacion.map(prod => `
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <input type="checkbox" name="aplicacionesProducto" value="${prod}">
+                                                <span>${prod}</span>
+                                            </label>
+                                            <input type="text" id="aplicacionesDosis_${prod.replace(/\s/g, '_')}" placeholder="Dosis (opcional)" style="margin-left: 1.5rem; width: calc(100% - 2rem);">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'fertilizacion':
+                        html = `
+                            <div class="card" style="background: #f8f9fa; padding: 1rem; margin: 1rem 0;">
+                                <h4>Productos de Fertilización *</h4>
+                                <div class="form-group">
+                                    <input type="text" id="fertilizacionSearch" placeholder="🔍 Buscar productos..." oninput="app.filterProductos('fertilizacion')">
+                                </div>
+                                <div id="fertilizacionProductos" style="max-height: 300px; overflow-y: auto;">
+                                    ${MENUS.productosFertilizacion.map(prod => `
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <input type="checkbox" name="fertilizacionProducto" value="${prod}">
+                                                <span>${prod}</span>
+                                            </label>
+                                            <input type="text" id="fertilizacionDosis_${prod.replace(/\s/g, '_')}" placeholder="Dosis (opcional)" style="margin-left: 1.5rem; width: calc(100% - 2rem);">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'labranzas':
+                        html = `
+                            <div class="form-group">
+                                <label>Equipo Utilizado *</label>
+                                <select id="labranzaEquipo">
+                                    <option value="">-- Seleccione --</option>
+                                    ${MENUS.equiposLabranza.map(eq => `<option value="${eq}">${eq}</option>`).join('')}
+                                </select>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'cosecha':
+                        html = `
+                            <div class="form-group">
+                                <label>Kg Cosechados *</label>
+                                <input type="number" id="cosechaKg" step="0.01" placeholder="Ej: 12500">
+                            </div>
+                        `;
+                        break;
+                }
+                
+                container.innerHTML = html;
+            },
+            
+            filterProductos(tipo) {
+                const searchTerm = document.getElementById(`${tipo}Search`).value.toLowerCase();
+                const container = document.getElementById(`${tipo}Productos`);
+                const items = container.querySelectorAll('div[style*="margin-bottom"]');
+                
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+                });
+            },
+            
+            populateMenus() {
+                // Poblar cultivos
+                const cultivoSelect = document.getElementById('cuartelCultivo');
+                if (cultivoSelect) {
+                    cultivoSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+                        MENUS.cultivos.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
+                
+                // Poblar sistemas de riego
+                const riegoSelect = document.getElementById('cuartelRiego');
+                if (riegoSelect) {
+                    riegoSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+                        MENUS.sistemasRiego.map(r => `<option value="${r}">${r}</option>`).join('');
+                }
+                
+                this.populateSelects();
+            },
+            
+            async populateSelects() {
+                const fincas = localCache.fincas;
+                const cuarteles = localCache.cuarteles;
+
+                const fincaSelect = document.getElementById('cuartelFinca');
+                if (fincaSelect) {
+                    fincaSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+                        fincas.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+                }
+
+                const cuartelOptions = cuarteles.map(c => {
+                    const finca = fincas.find(f => f.id === c.finca_id);
+                    return `<option value="${c.id}">${finca ? finca.nombre : 'N/A'} - ${c.nombre}</option>`;
+                }).join('');
+
+                const laborCuartel = document.getElementById('laborCuartel');
+                if (laborCuartel) {
+                    laborCuartel.innerHTML = '<option value="">-- Seleccione --</option>' + cuartelOptions;
+                }
+                
+                const consultaCuartel = document.getElementById('consultaCuartel');
+                if (consultaCuartel) {
+                    consultaCuartel.innerHTML = '<option value="">Todos</option>' + cuartelOptions;
+                }
+            },
+            
+            updateVariedades() {
+                const cultivo = document.getElementById('cuartelCultivo').value;
+                const variedadSelect = document.getElementById('cuartelVariedad');
+                
+                if (!cultivo) {
+                    variedadSelect.innerHTML = '<option value="">-- Primero seleccione cultivo --</option>';
+                    return;
+                }
+                
+                const variedades = MENUS.variedades[cultivo] || [];
+                variedadSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+                    variedades.map(v => `<option value="${v}">${v}</option>`).join('');
+            },
+            
+            toggleOtroRiego() {
+                const riego = document.getElementById('cuartelRiego').value;
+                const container = document.getElementById('otroRiegoContainer');
+                container.style.display = riego === 'Otro' ? 'block' : 'none';
+            },
+            
+            showTab(tabName) {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                event.target.classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            },
+            
+            showAlert(containerId, message, type = 'error') {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                container.className = `alert alert-${type}`;
+                container.textContent = message;
+                container.style.display = 'block';
+                
+                setTimeout(() => {
+                    container.style.display = 'none';
+                }, 5000);
+            },
+            
+            showAuthAlert(message, type = 'error') {
+                const container = document.getElementById('authAlert');
+                if (!container) return;
+                
+                container.className = `alert alert-${type}`;
+                container.textContent = message;
+                container.style.display = 'block';
+            },
+            
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            },
+            
+            exportToExcel() {
+                if (this.currentFilteredData.length === 0) {
+                    this.showNotification('⚠ No hay datos para exportar');
+                    return;
+                }
+
+                const excelData = this.currentFilteredData.map(labor => {
+                    const cuartel = localCache.cuarteles.find(c => c.id === labor.cuartel_id);
+                    const finca = cuartel ? localCache.fincas.find(f => f.id === cuartel.finca_id) : null;
+                    
+                    const row = {
+                        'Fecha': new Date(labor.fecha).toLocaleDateString('es-AR'),
+                        'Tipo': labor.tipo,
+                        'Finca': finca ? finca.nombre : 'N/A',
+                        'Cuartel': cuartel ? cuartel.nombre : 'N/A',
+                        'Cultivo': cuartel ? cuartel.cultivo : 'N/A',
+                        'Variedad': cuartel ? cuartel.variedad : 'N/A'
+                    };
+
+                    switch(labor.tipo) {
+                        case 'riego':
+                            row['Tiempo (h)'] = labor.tiempo || '';
+                            break;
+                        case 'aplicaciones':
+                        case 'fertilizacion':
+                            row['Productos'] = labor.productos ? labor.productos.map(p => p.nombre).join(', ') : '';
+                            row['Dosis'] = labor.productos ? labor.productos.map(p => p.dosis || '').join(', ') : '';
+                            break;
+                        case 'labranzas':
+                            row['Equipo'] = labor.equipo || '';
+                            break;
+                        case 'cosecha':
+                            row['Kg Cosechados'] = labor.kg_cosechados || '';
+                            break;
+                    }
+
+                    row['Jornales'] = labor.jornales || '';
+                    row['Observaciones'] = labor.observaciones || '';
+
+                    return row;
+                });
+
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Labores");
+
+                const filename = `labores_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                
+                this.showNotification('✓ Excel exportado');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
