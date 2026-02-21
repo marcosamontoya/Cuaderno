@@ -12,7 +12,7 @@ const SUPABASE_CONFIG = {
 
 // OPCIONAL: URL del logo de tu empresa
 // Ejemplo: const LOGO_URL = 'https://mi-sitio.com/logo.png';
-const LOGO_URL = '/main/AgroData360Logo.jpeg'; 
+const LOGO_URL = '/main/AgroData360Logo.jpg'; 
 
 // ============================================================
 // NO MODIFICAR DESDE AQUÍ HACIA ABAJO
