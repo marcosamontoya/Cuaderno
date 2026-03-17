@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuaderno de Campo - AgroData360</title>
+    <title>Cuaderno de Campo Digital Mendoza</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Supabase Integration -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config-supabase.js"></script>
-    <script src="supabase-service.js"></script>
     <style>
         :root {
             --primary: #2d5016;
@@ -90,7 +87,7 @@
         .logo-icon {
             width: 42px;
             height: 42px;
-            background: var(--accent);
+            background: white;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -188,7 +185,8 @@
         .auth-logo-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: white;
+            border: 2px solid rgba(45,80,22,0.15);
             border-radius: 16px;
             display: inline-flex;
             align-items: center;
@@ -770,488 +768,1518 @@
                 opacity: 1;
             }
         }
+
+        /* ========== STOCK DE AGROQUÍMICOS ========== */
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stock-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stock-stat {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border-radius: 10px;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+        }
+        .stock-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Crimson Pro', serif;
+        }
+        .stock-stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-top: 0.3rem;
+        }
+        .stock-table-container {
+            overflow-x: auto;
+        }
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .stock-table th {
+            background: var(--primary);
+            color: white;
+            padding: 0.9rem 1rem;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .stock-table td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .stock-table tr:hover td {
+            background: rgba(45, 80, 22, 0.04);
+        }
+        .stock-qty {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--primary);
+        }
+        .stock-qty.low {
+            color: var(--danger);
+        }
+        .stock-badge {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .stock-badge-insecticida { background: rgba(201,76,76,0.12); color: #a33; }
+        .stock-badge-fungicida { background: rgba(74,124,42,0.12); color: var(--primary); }
+        .stock-badge-herbicida { background: rgba(232,184,109,0.2); color: #8b6000; }
+        .stock-badge-fertilizante { background: rgba(52,152,219,0.12); color: #1a6a9a; }
+        .stock-badge-otro { background: rgba(150,150,150,0.12); color: #555; }
+        .btn-mov { 
+            padding: 0.35rem 0.75rem; 
+            border-radius: 5px; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            transition: all 0.2s; 
+            margin-right: 0.25rem;
+        }
+        .btn-entrada { background: rgba(74,124,42,0.15); color: var(--primary); border: 1px solid var(--primary-light); }
+        .btn-entrada:hover { background: var(--primary); color: white; }
+        .btn-salida { background: rgba(201,76,76,0.12); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-salida:hover { background: var(--danger); color: white; }
+        .btn-pdf { 
+            background: #c94c4c; 
+            color: white; 
+            padding: 0.7rem 1.4rem; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 0.95rem; 
+            transition: all 0.3s;
+        }
+        .btn-pdf:hover { background: #a33d3d; transform: translateY(-1px); }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: white;
+            border-radius: 14px;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: slideUp 0.3s ease;
+            margin: auto;
+        }
+        .modal-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            color: var(--text-primary);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            justify-content: flex-end;
+        }
+        .btn-cancel {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid var(--border);
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-cancel:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-confirm {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-confirm:hover { background: var(--primary-light); }
+        .historial-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .historial-entrada { color: var(--success); font-weight: 600; }
+        .historial-salida { color: var(--danger); font-weight: 600; }
+
+        /* ========== CALIBRACIÓN ========== */
+        .calib-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .calib-tab {
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        .calib-tab:hover { color: var(--primary); }
+        .calib-tab.active { color: var(--primary); }
+        .calib-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0; right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+        .calib-section { display: none; }
+        .calib-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+        .picos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        .pico-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .pico-item label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .pico-input {
+            padding: 0.6rem 0.8rem;
+            border: 2px solid var(--border);
+            border-radius: 7px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+        .pico-input:focus { outline: none; border-color: var(--primary); }
+        .pico-input.outlier { 
+            border-color: var(--danger) !important; 
+            background: rgba(201,76,76,0.07); 
+            color: var(--danger);
+            font-weight: 700;
+        }
+        .pico-input.normal { border-color: var(--success); }
+
+        .result-box {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .result-main {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'Crimson Pro', serif;
+            line-height: 1;
+        }
+        .result-unit {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            margin-top: 0.3rem;
+        }
+        .result-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.2rem;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .result-item-value { font-size: 1.4rem; font-weight: 700; font-family: 'Crimson Pro', serif; }
+        .result-item-label { font-size: 0.78rem; opacity: 0.85; margin-top: 0.2rem; }
+
+        .warning-box {
+            background: rgba(201,76,76,0.1);
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            margin-top: 1rem;
+            color: var(--danger);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .info-box {
+            background: rgba(45,80,22,0.07);
+            border: 1px solid rgba(45,80,22,0.2);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            margin-top: 1rem;
+            color: var(--primary-dark);
+            font-size: 0.9rem;
+        }
+
+        /* Tutorial styles */
+        .tutorial-step {
+            display: flex;
+            gap: 1.2rem;
+            margin-bottom: 1.8rem;
+            align-items: flex-start;
+        }
+        .tutorial-num {
+            min-width: 36px;
+            height: 36px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .tutorial-content h4 {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+            font-size: 1rem;
+        }
+        .tutorial-content p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+        .tutorial-content ul {
+            margin: 0.5rem 0 0 1.2rem;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .formula-box {
+            background: var(--primary-dark);
+            color: white;
+            border-radius: 8px;
+            padding: 1rem 1.4rem;
+            font-family: monospace;
+            font-size: 1rem;
+            margin: 0.75rem 0;
+            letter-spacing: 0.02em;
+        }
+        .tip-box {
+            background: rgba(232,184,109,0.2);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 0.9rem 1.2rem;
+            margin: 0.75rem 0;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        .tip-box strong { color: #8b6000; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <div id="app" class="app-container"></div>
+    <div class="app-container" id="appContainer">
+        <!-- Auth Screen -->
+        <div id="authScreen" class="auth-screen">
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon" id="authLogoIcon">
+                        <img src="https://mza-dicaws-portal-uploads-media-prod.s3.amazonaws.com/informacion-oficial/uploads/sites/17/2025/03/marca_gov.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;padding:6px;">
+                    </div>
+                    <h1 class="auth-title">Cuaderno de Campo Digital</h1>
+                    <p class="auth-subtitle">Sistema de Registro de Labores Agrícolas — Mendoza</p>
+                    <div class="logo-upload-section">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">
+                            
+                            </code>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <div id="loginForm">
+                    <div id="loginAlert"></div>
+                    <div class="form-group">
+                        <label class="form-label">RUT</label>
+                        <input type="text" id="loginRut" class="form-input" placeholder="Ej: 20-12345678-9" maxlength="13">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Ingrese su contraseña">
+                    </div>
+                    <button class="btn-primary" onclick="app.login()">Ingresar</button>
+                    <button class="btn-secondary" onclick="app.showRegister()">Crear Nueva Cuenta</button>
+                </div>
+
+                <!-- Register Form -->
+                <div id="registerForm" class="hidden">
+                    <div id="registerAlert"></div>
+                    <div class="form-group">
+                        <label class="form-label">RUT</label>
+                        <input type="text" id="registerRut" class="form-input" placeholder="Ej: 20-12345678-9" maxlength="13">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nombre Completo</label>
+                        <input type="text" id="registerName" class="form-input" placeholder="Ingrese su nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" id="registerPassword" class="form-input" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirmar Contraseña</label>
+                        <input type="password" id="registerPasswordConfirm" class="form-input" placeholder="Repita su contraseña">
+                    </div>
+                    <button class="btn-primary" onclick="app.register()">Registrarse</button>
+                    <button class="btn-secondary" onclick="app.showLogin()">Ya tengo cuenta</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" class="hidden">
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <div class="logo-icon" id="headerLogoIcon"><img src="https://mza-dicaws-portal-uploads-media-prod.s3.amazonaws.com/informacion-oficial/uploads/sites/17/2025/03/marca_gov.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+                        <span>Cuaderno de Campo Digital Mendoza</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName"></span>
+                        <button class="btn-logout" onclick="app.logout()">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="app.switchTab('fincas')">Fincas</button>
+                    <button class="tab" onclick="app.switchTab('cuarteles')">Cuarteles</button>
+                    <button class="tab" onclick="app.switchTab('labores')">Labores</button>
+                    <button class="tab" onclick="app.switchTab('consultas')">Consultas</button>
+                    <button class="tab" onclick="app.switchTab('stock')">Stock</button>
+                    <button class="tab" onclick="app.switchTab('calibracion')">Calibración</button>
+                </div>
+
+                <!-- Fincas Tab -->
+                <div id="fincasTab" class="tab-content active">
+                    <div class="card">
+                        <h2 class="card-title">Registrar Nueva Finca</h2>
+                        <div id="fincaAlert"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nombre de la Finca</label>
+                                <input type="text" id="fincaNombre" class="form-input" placeholder="Ej: Finca Los Álamos">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" id="fincaDireccion" class="form-input" placeholder="Ej: Ruta 7 Km 1025">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Superficie (ha)</label>
+                                <input type="number" id="fincaSuperficie" class="form-input" placeholder="Ej: 25.5" step="0.1">
+                            </div>
+                        </div>
+                        <button class="btn btn-add" onclick="app.addFinca()">Agregar Finca</button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Mis Fincas</h2>
+                        <div id="fincasList"></div>
+                    </div>
+                </div>
+
+                <!-- Cuarteles Tab -->
+                <div id="cuartelesTab" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Registrar Nuevo Cuartel</h2>
+                        <div id="cuartelAlert"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Seleccionar Finca</label>
+                                <select id="cuartelFinca" class="form-input">
+                                    <option value="">-- Seleccione una finca --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nombre del Cuartel</label>
+                                <input type="text" id="cuartelNombre" class="form-input" placeholder="Ej: Cuartel Norte">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Superficie (ha)</label>
+                                <input type="number" id="cuartelSuperficie" class="form-input" placeholder="Ej: 5.2" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cultivo</label>
+                                <select id="cuartelCultivo" class="form-input" onchange="app.updateVariedades()">
+                                    <option value="">-- Seleccione cultivo --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Variedad (Opcional)</label>
+                                <select id="cuartelVariedad" class="form-input">
+                                    <option value="">-- Primero seleccione cultivo --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Sistema de Riego</label>
+                                <select id="cuartelRiego" class="form-input" onchange="app.toggleOtroRiego()">
+                                    <option value="">-- Seleccione sistema --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" id="otroRiegoContainer" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Especificar Sistema de Riego</label>
+                                <input type="text" id="cuartelRiegoOtro" class="form-input" placeholder="Especifique el sistema">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Año de Implantación (Opcional)</label>
+                                <input type="number" id="cuartelAnio" class="form-input" placeholder="Ej: 2015" min="1900" max="2100">
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="cuartelAntigranizo">
+                                    <label for="cuartelAntigranizo">Presencia de tela antigranizo</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-add" onclick="app.addCuartel()">Agregar Cuartel</button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Mis Cuarteles</h2>
+                        <div id="cuartelesList"></div>
+                    </div>
+                </div>
+
+                <!-- Labores Tab -->
+                <div id="laboresTab" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Registrar Labor</h2>
+                        <div id="laborAlert"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Tipo de Labor</label>
+                                <select id="laborTipo" class="form-input" onchange="app.updateLaborFields()">
+                                    <option value="">-- Seleccione --</option>
+                                    <option value="riego">Riego</option>
+                                    <option value="aplicaciones">Aplicaciones</option>
+                                    <option value="fertilizacion">Fertilización</option>
+                                    <option value="labranzas">Labranzas</option>
+                                    <option value="cosecha">Cosecha</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cuartel</label>
+                                <select id="laborCuartel" class="form-input">
+                                    <option value="">-- Seleccione un cuartel --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" id="laborFecha" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Conditional Fields based on labor type -->
+                        <div id="laborConditionalFields"></div>
+
+                        <div class="form-group">
+                            <label class="form-label">Observaciones</label>
+                            <textarea id="laborObservaciones" class="form-input" placeholder="Notas adicionales (opcional)"></textarea>
+                        </div>
+                        <button class="btn btn-add" onclick="app.addLabor()">Registrar Labor</button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Últimas Labores Registradas</h2>
+                        <div id="laboresList"></div>
+                    </div>
+                </div>
+
+                <!-- Consultas Tab -->
+                <div id="consultasTab" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Consultar Labores</h2>
+                        <div class="filter-section">
+                            <div class="filter-title">Filtros de Búsqueda</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Finca</label>
+                                    <select id="consultaFinca" class="form-input" onchange="app.updateCuartelFilter(); app.filterLabores()">
+                                        <option value="">Todas las fincas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Cuartel</label>
+                                    <select id="consultaCuartel" class="form-input" onchange="app.filterLabores()">
+                                        <option value="">Todos los cuarteles</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Tipo de Labor</label>
+                                    <select id="consultaTipo" class="form-input" onchange="app.filterLabores()">
+                                        <option value="">Todas las labores</option>
+                                        <option value="riego">Riego</option>
+                                        <option value="aplicaciones">Aplicaciones</option>
+                                        <option value="fertilizacion">Fertilización</option>
+                                        <option value="labranzas">Labranzas</option>
+                                        <option value="cosecha">Cosecha</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Fecha Desde</label>
+                                    <input type="date" id="consultaFechaDesde" class="form-input" onchange="app.filterLabores()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha Hasta</label>
+                                    <input type="date" id="consultaFechaHasta" class="form-input" onchange="app.filterLabores()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-export" onclick="app.exportToExcel()">📥 Exportar a Excel</button>
+                        <div id="consultaResults"></div>
+                    </div>
+                </div>
+
+                <!-- ===================== STOCK TAB ===================== -->
+                <div id="stockTab" class="tab-content">
+
+                    <!-- Modals -->
+                    <div class="modal-overlay" id="modalAgregarProducto">
+                        <div class="modal-box">
+                            <div class="modal-title">➕ Agregar Producto al Stock</div>
+                            <div id="stockFormAlert"></div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Nombre del Producto *</label>
+                                    <input type="text" id="stockNombre" class="form-input" placeholder="Ej: Azufre Mojable">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Categoría</label>
+                                    <select id="stockCategoria" class="form-input">
+                                        <option value="fungicida">Fungicida</option>
+                                        <option value="insecticida">Insecticida</option>
+                                        <option value="herbicida">Herbicida</option>
+                                        <option value="fertilizante">Fertilizante</option>
+                                        <option value="otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Cantidad *</label>
+                                    <input type="number" id="stockCantidad" class="form-input" placeholder="0" min="0" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Unidad *</label>
+                                    <select id="stockUnidad" class="form-input">
+                                        <option value="L">Litros (L)</option>
+                                        <option value="kg">Kilogramos (kg)</option>
+                                        <option value="g">Gramos (g)</option>
+                                        <option value="ml">Mililitros (ml)</option>
+                                        <option value="unidades">Unidades</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Stock mínimo (alerta)</label>
+                                    <input type="number" id="stockMinimo" class="form-input" placeholder="Ej: 5" min="0" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha de vencimiento</label>
+                                    <input type="date" id="stockVencimiento" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Observaciones</label>
+                                <textarea id="stockObservaciones" class="form-input" placeholder="Lote, proveedor, etc." style="min-height:60px;"></textarea>
+                            </div>
+                            <div class="modal-actions">
+                                <button class="btn-cancel" onclick="stockApp.closeModal('modalAgregarProducto')">Cancelar</button>
+                                <button class="btn-confirm" onclick="stockApp.guardarProducto()">Guardar Producto</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-overlay" id="modalMovimiento">
+                        <div class="modal-box">
+                            <div class="modal-title" id="modalMovTitle">📦 Registrar Movimiento</div>
+                            <div class="form-group">
+                                <label class="form-label">Producto</label>
+                                <input type="text" id="movProductoNombre" class="form-input" readonly style="background:#f5f5f5;">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Cantidad *</label>
+                                    <input type="number" id="movCantidad" class="form-input" placeholder="0" min="0.01" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha</label>
+                                    <input type="date" id="movFecha" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Motivo / Detalle</label>
+                                <input type="text" id="movMotivo" class="form-input" placeholder="Ej: Aplicación cuartel Norte / Compra proveedor">
+                            </div>
+                            <input type="hidden" id="movProductoId">
+                            <input type="hidden" id="movTipo">
+                            <div class="modal-actions">
+                                <button class="btn-cancel" onclick="stockApp.closeModal('modalMovimiento')">Cancelar</button>
+                                <button class="btn-confirm" onclick="stockApp.confirmarMovimiento()">Confirmar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-overlay" id="modalHistorial">
+                        <div class="modal-box" style="max-width:560px;">
+                            <div class="modal-title">📋 Historial de Movimientos</div>
+                            <div id="historialContent" style="max-height:320px;overflow-y:auto;"></div>
+                            <div class="modal-actions">
+                                <button class="btn-confirm" onclick="stockApp.closeModal('modalHistorial')">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Main Card -->
+                    <div class="card">
+                        <div class="stock-header">
+                            <h2 class="card-title" style="margin-bottom:0;">🧪 Stock de Agroquímicos</h2>
+                            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                                <button class="btn btn-add" onclick="stockApp.openModal('modalAgregarProducto')">+ Agregar Producto</button>
+                                <button class="btn-pdf" onclick="stockApp.imprimirStock()">🖨️ Imprimir Stock PDF</button>
+                            </div>
+                        </div>
+
+                        <div class="stock-summary" id="stockSummary">
+                            <div class="stock-stat"><div class="stock-stat-value" id="statTotal">0</div><div class="stock-stat-label">Productos en stock</div></div>
+                            <div class="stock-stat" style="background:linear-gradient(135deg,#c94c4c,#e06060);"><div class="stock-stat-value" id="statBajos">0</div><div class="stock-stat-label">Stock bajo mínimo</div></div>
+                            <div class="stock-stat" style="background:linear-gradient(135deg,#8b6000,#c07600);"><div class="stock-stat-value" id="statVencidos">0</div><div class="stock-stat-label">Por vencer (30 días)</div></div>
+                        </div>
+
+                        <div class="stock-table-container">
+                            <table class="stock-table" id="stockTable">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th>Stock Actual</th>
+                                        <th>Mínimo</th>
+                                        <th>Vencimiento</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockTableBody">
+                                    <tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">Cargando stock...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Hidden printable area -->
+                    <div id="printArea" style="display:none;"></div>
+                </div>
+
+                <!-- ===================== CALIBRACIÓN TAB ===================== -->
+                <div id="calibracionTab" class="tab-content">
+                    <div class="card">
+                        <div class="calib-tabs">
+                            <button class="calib-tab" onclick="calibApp.switchSection('atomizadora', this)">Atomizadora</button>
+                            <button class="calib-tab" onclick="calibApp.switchSection('barral', this)">Barral / Cultivos Bajos</button>
+                            <button class="calib-tab active" onclick="calibApp.switchSection('tutorial', this)">Tutorial de Medición</button>
+                        </div>
+
+                        <!-- ATOMIZADORA -->
+                        <div id="calibAtomizadora" class="calib-section">
+                            <h2 class="card-title">⚙️ Calibración de Atomizadora</h2>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Velocidad de trabajo (km/h)</label>
+                                    <input type="number" id="atomVelocidad" class="form-input" placeholder="Ej: 6" min="0.1" step="0.1" oninput="calibApp.calcAtomizadora()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Distancia entre hileras (m)</label>
+                                    <input type="number" id="atomDistHileras" class="form-input" placeholder="Ej: 2.5" min="0.1" step="0.1" oninput="calibApp.calcAtomizadora()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nº de picos (total)</label>
+                                    <input type="number" id="atomNPicos" class="form-input" placeholder="Ej: 12" min="1" step="1" oninput="calibApp.renderPicosAtomizadora()">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">⏱ Tiempo de medición (segundos)</label>
+                                <select id="atomTiempoMed" class="form-input" onchange="calibApp.calcAtomizadora()">
+                                    <option value="30">30 segundos</option>
+                                    <option value="60" selected>60 segundos (recomendado)</option>
+                                    <option value="120">120 segundos</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Caudal de cada pico (ml en el tiempo elegido)</label>
+                                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">Ingrese los ml colectados en cada pico. Los que superen ±10% de la media se marcarán en rojo.</p>
+                                <div class="picos-grid" id="picosAtomGrid"></div>
+                                <div id="atomOutlierWarning"></div>
+                            </div>
+
+                            <div id="atomResultado"></div>
+                        </div>
+
+                        <!-- BARRAL -->
+                        <div id="calibBarral" class="calib-section">
+                            <h2 class="card-title">⚙️ Calibración de Barral (Cultivos Bajos)</h2>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Velocidad de trabajo (km/h)</label>
+                                    <input type="number" id="barrVelocidad" class="form-input" placeholder="Ej: 8" min="0.1" step="0.1" oninput="calibApp.calcBarral()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Distancia entre picos (cm)</label>
+                                    <input type="number" id="barrDistPicos" class="form-input" placeholder="Ej: 50" min="1" step="1" oninput="calibApp.calcBarral()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nº de picos</label>
+                                    <input type="number" id="barrNPicos" class="form-input" placeholder="Ej: 20" min="1" step="1" oninput="calibApp.renderPicosBarral()">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">⏱ Tiempo de medición (segundos)</label>
+                                <select id="barrTiempoMed" class="form-input" onchange="calibApp.calcBarral()">
+                                    <option value="30">30 segundos</option>
+                                    <option value="60" selected>60 segundos (recomendado)</option>
+                                    <option value="120">120 segundos</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Caudal de cada pico (ml en el tiempo elegido)</label>
+                                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">Ingrese los ml colectados en cada pico. Los que superen ±10% de la media se marcarán en rojo.</p>
+                                <div class="picos-grid" id="picosBarralGrid"></div>
+                                <div id="barrOutlierWarning"></div>
+                            </div>
+
+                            <div id="barrResultado"></div>
+                        </div>
+
+                        <!-- TUTORIAL -->
+                        <div id="calibTutorial" class="calib-section active">
+                            <h2 class="card-title">📖 Tutorial: Cómo Calibrar una Pulverizadora</h2>
+                            <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-size:0.95rem;">Basado en metodología INTA. Siga estos pasos para obtener una calibración precisa y segura.</p>
+
+                            <div class="tip-box">
+                                <strong>⚠️ Importante:</strong> Realizar las mediciones con agua limpia. Nunca calibrar con agroquímicos. Usar ropa de protección adecuada.
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">1</div>
+                                <div class="tutorial-content">
+                                    <h4>Preparación del equipo</h4>
+                                    <p>Antes de comenzar, asegúrese de que la pulverizadora esté en buenas condiciones:</p>
+                                    <ul>
+                                        <li>Limpiar filtros y picos (boquillas)</li>
+                                        <li>Verificar que no haya pérdidas en mangueras y conexiones</li>
+                                        <li>Comprobar el correcto funcionamiento de válvulas y manómetro</li>
+                                        <li>Llenar el tanque con agua limpia</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">2</div>
+                                <div class="tutorial-content">
+                                    <h4>Determinar la velocidad de trabajo</h4>
+                                    <p>Mida la velocidad real de avance del tractor en el lote:</p>
+                                    <ul>
+                                        <li>Marque una distancia de <strong>50 metros</strong> en el lote con estacas</li>
+                                        <li>Arranque el tractor en la marcha y régimen habitual de trabajo</li>
+                                        <li>Mida el tiempo en segundos que tarda en recorrer los 50 m</li>
+                                        <li>Calcule la velocidad: <strong>Velocidad (km/h) = (50 m × 3.6) ÷ tiempo (s)</strong></li>
+                                    </ul>
+                                    <div class="formula-box">V (km/h) = 180 ÷ tiempo (segundos para 50 m)</div>
+                                    <div class="tip-box"><strong>Ejemplo:</strong> Si tarda 30 segundos en recorrer 50 m → V = 180 ÷ 30 = 6 km/h</div>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">3</div>
+                                <div class="tutorial-content">
+                                    <h4>Medir el caudal de cada pico</h4>
+                                    <p>Con el equipo detenido, motor a las RPM de trabajo y presión regulada:</p>
+                                    <ul>
+                                        <li>Coloque un recipiente graduado debajo de cada pico</li>
+                                        <li>Abra el circuito y recolecte agua durante <strong>60 segundos</strong></li>
+                                        <li>Mida el volumen colectado en mililitros (ml)</li>
+                                        <li>Repita para cada pico o boquilla</li>
+                                        <li>Anote el valor de cada pico en la planilla de calibración</li>
+                                    </ul>
+                                    <div class="tip-box"><strong>⚠️ Atención:</strong> Los picos que difieran más del <strong>10% de la media</strong> deben reemplazarse o limpiarse. Esto garantiza una aplicación uniforme.</div>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">4</div>
+                                <div class="tutorial-content">
+                                    <h4>Cálculo del volumen de aplicación (litros/ha)</h4>
+                                    <p>Una vez obtenidos velocidad y caudales, el sistema calcula automáticamente el gasto por hectárea.</p>
+                                    <p style="margin-top:0.6rem;"><strong>Para atomizadora (frutales):</strong></p>
+                                    <div class="formula-box">L/ha = (Q total picos × 600) ÷ (V km/h × D hileras m)</div>
+                                    <p style="margin-top:0.8rem;"><strong>Para barral (cultivos bajos):</strong></p>
+                                    <div class="formula-box">L/ha = (Q/pico ml/min × 10.000 m²) ÷ (V m/min × dist. picos m)</div>
+                                    <p style="margin-top:0.6rem; font-size:0.88rem; color:var(--text-secondary);">Donde Q es el caudal total en L/min, V la velocidad y D la distancia entre hileras.</p>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">5</div>
+                                <div class="tutorial-content">
+                                    <h4>Volúmenes de aplicación recomendados</h4>
+                                    <p>Rangos orientativos según cultivo y tipo de equipo:</p>
+                                    <div class="table-container" style="margin-top:0.75rem;">
+                                        <table>
+                                            <thead><tr><th>Cultivo / Situación</th><th>Volumen recomendado</th></tr></thead>
+                                            <tbody>
+                                                <tr><td>Vid (canopia densa)</td><td>400–800 L/ha</td></tr>
+                                                <tr><td>Vid (canopia abierta)</td><td>200–400 L/ha</td></tr>
+                                                <tr><td>Frutales carozo/pepita</td><td>500–1.000 L/ha</td></tr>
+                                                <tr><td>Olivos</td><td>500–800 L/ha</td></tr>
+                                                <tr><td>Cultivos extensivos (barral)</td><td>80–200 L/ha</td></tr>
+                                                <tr><td>Hortalizas</td><td>200–400 L/ha</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">6</div>
+                                <div class="tutorial-content">
+                                    <h4>Ajuste de dosis de productos</h4>
+                                    <p>Con el volumen de aplicación calculado, la dosis de producto a agregar al tanque se obtiene así:</p>
+                                    <div class="formula-box">Dosis tanque = (dosis/ha × capacidad tanque L) ÷ L/ha calculados</div>
+                                    <div class="tip-box"><strong>Ejemplo:</strong> Dosis del producto: 2 L/ha. Tanque: 600 L. Gasto: 400 L/ha.<br>→ Agregar al tanque: (2 × 600) ÷ 400 = <strong>3 litros</strong> del producto.</div>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">7</div>
+                                <div class="tutorial-content">
+                                    <h4>Uniformidad de distribución — Coeficiente de variación</h4>
+                                    <p>Una aplicación se considera uniforme cuando el <strong>Coeficiente de Variación (CV) de los caudales es menor al 10%</strong>. El sistema lo calcula automáticamente al ingresar los caudales.</p>
+                                    <ul>
+                                        <li><strong>CV &lt; 10%:</strong> ✅ Distribución uniforme — continuar</li>
+                                        <li><strong>CV 10–15%:</strong> ⚠️ Aceptable con ajustes menores</li>
+                                        <li><strong>CV &gt; 15%:</strong> ❌ Reemplazar picos fuera de rango</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <div class="tutorial-num">8</div>
+                                <div class="tutorial-content">
+                                    <h4>Registro y trazabilidad</h4>
+                                    <p>Se recomienda:</p>
+                                    <ul>
+                                        <li>Registrar la calibración cada 50 horas de trabajo o al inicio de cada temporada</li>
+                                        <li>Documentar fecha, operario, presión de trabajo y caudales medidos</li>
+                                        <li>Guardar los resultados junto al cuaderno de campo</li>
+                                        <li>Repetir la calibración si se cambian picos, presión o velocidad</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <strong>📚 Fuente:</strong> Metodología basada en publicaciones del INTA (Instituto Nacional de Tecnología Agropecuaria) — "Calibración de Pulverizadoras". Para mayor detalle consultar la publicación oficial del INTA disponible en inta.gob.ar.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
     <script>
-        // ==================== CONFIGURACIÓN SUPABASE ====================
-        let supabaseService;
-        let currentUser = null;
-        const localCache = { fincas: [], cuarteles: [], labores: [] };
+        // ============================================
+        // CONFIGURACIÓN DEL LOGO
+        // Reemplazar 'URL_DE_TU_LOGO_AQUI' con la URL de tu logo
+        // Ejemplo: const LOGO_URL = 'https://miempresa.com/logo.png';
+        // O usar ruta relativa: const LOGO_URL = './img/logo.png';
+        // ============================================
+        const LOGO_URL = 'URL_DE_TU_LOGO_AQUI';
         
-        function initSupabase() {
-            try {
-                if (typeof SUPABASE_CONFIG === 'undefined') {
-                    alert('ERROR: config-supabase.js no encontrado.\nAsegúrate de que esté en la misma carpeta.');
-                    return false;
-                }
-                supabaseService = new SupabaseService(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-                console.log('✓ Supabase inicializado');
-                return true;
-            } catch (error) {
-                console.error('✗ Error Supabase:', error);
-                alert('Error de conexión. Verifica config-supabase.js');
-                return false;
-            }
-        }
         
-        // ==================== GESTIÓN DE MENÚS ====================
-        const MENUS = {
+        // Configuration data
+        let CONFIG = {
             cultivos: [],
-            variedades: {},
+            variedadesPorCultivo: {},
             sistemasRiego: [],
             productosAplicacion: [],
             productosFertilizacion: [],
-            equiposLabranza: [],
+            equiposLabranza: []
+        };
+
+        // Load configuration from JSON
+        async function loadConfig() {
+            const defaultConfig = {
+                "cultivos": ["Vid", "Olivo", "Manzana", "Pera", "Durazno", "Ciruela", "Cereza", "Damasco", "Nogal", "Almendro", "Ajo", "Cebolla", "Tomate", "Zanahoria", "Papa", "Maíz", "Alfalfa", "Otro"],
+                "variedadesPorCultivo": {
+                    "Vid": ["Malbec", "Cabernet Sauvignon", "Merlot", "Syrah", "Bonarda", "Chardonnay", "Torrontés", "Sauvignon Blanc", "Chenin", "Otra"],
+                    "Olivo": ["Arauco", "Arbequina", "Barnea", "Coratina", "Frantoio", "Manzanilla", "Picual", "Otra"],
+                    "Manzana": ["Red Delicious", "Granny Smith", "Gala", "Fuji", "Pink Lady", "Cripps Pink", "Otra"],
+                    "Pera": ["Williams", "Packham's", "Beurré D'Anjou", "Abate Fetel", "Otra"],
+                    "Durazno": ["Flordaking", "Elegant Lady", "O'Henry", "Pavía", "Otra"],
+                    "Ciruela": ["Angeleno", "Larry Ann", "Black Amber", "Otra"],
+                    "Cereza": ["Bing", "Lapins", "Stella", "Sweetheart", "Otra"],
+                    "Damasco": ["Búlida", "Canino", "Moniquí", "Otra"],
+                    "Nogal": ["Chandler", "Franquette", "Serr", "Otra"],
+                    "Almendro": ["Nonpareil", "Carmel", "Butte", "Otra"],
+                    "Otro": ["Especificar"]
+                },
+                "sistemasRiego": ["Surcos", "Melgas", "Goteo", "Aspersión", "Pivot", "Otro"],
+                "productosAplicacion": ["Glifosato", "Azufre", "Cobre", "Mancozeb", "Captan", "Tiofanato Metílico", "Tebuconazole", "Difenoconazole", "Imidacloprid", "Clorpirifos", "Lambda Cihalotrina", "Abamectina", "Aceite Mineral", "Bacillus thuringiensis", "Azadiractina", "Otro"],
+                "productosFertilizacion": ["Urea (46-0-0)", "Fosfato Diamónico (18-46-0)", "Fosfato Monoamónico (11-52-0)", "Nitrato de Amonio (33-0-0)", "Nitrato de Calcio", "Sulfato de Potasio (0-0-50)", "Cloruro de Potasio (0-0-60)", "Sulfato de Zinc", "Sulfato de Magnesio", "Ácido Bórico", "Compost", "Guano", "Humus de Lombriz", "Fertilizante Foliar Completo", "Otro"],
+                "equiposLabranza": ["Arado de Discos", "Arado de Rejas", "Rastra de Discos", "Cincel", "Subsolador", "Rotovator", "Cultivador", "Niveladora", "Surcadora", "Rolo Compactador", "Desmalezadora", "Otro"]
+            };
+
+            const stored = localStorage.getItem('config_menus');
+            CONFIG = stored ? JSON.parse(stored) : defaultConfig;
             
-            async load() {
-                try {
-                    const response = await fetch('config_menus.json');
-                    if (!response.ok) throw new Error('No se pudo cargar config_menus.json');
-                    const data = await response.json();
-                    
-                    this.cultivos = data.cultivos || [];
-                    this.variedades = data.variedadesPorCultivo || {};
-                    this.sistemasRiego = data.sistemasRiego || [];
-                    this.productosAplicacion = data.productosAplicacion || [];
-                    this.productosFertilizacion = data.productosFertilizacion || [];
-                    this.equiposLabranza = data.equiposLabranza || [];
-                    
-                    console.log('✓ Menús cargados');
-                } catch (error) {
-                    console.error('Error cargando menús:', error);
-                    alert('Error: config_menus.json no encontrado');
+            if (!stored) {
+                localStorage.setItem('config_menus', JSON.stringify(defaultConfig));
+            }
+        }
+
+        // Database Manager
+        const DB = {
+            usuarios: { users: [] },
+            fincas: { fincas: [] },
+            cuarteles: { cuarteles: [] },
+            labores: { labores: [] },
+
+            async loadAll() {
+                const stored = {
+                    usuarios: localStorage.getItem('db_usuarios'),
+                    fincas: localStorage.getItem('db_fincas'),
+                    cuarteles: localStorage.getItem('db_cuarteles'),
+                    labores: localStorage.getItem('db_labores')
+                };
+
+                this.usuarios = stored.usuarios ? JSON.parse(stored.usuarios) : { users: [] };
+                this.fincas = stored.fincas ? JSON.parse(stored.fincas) : { fincas: [] };
+                this.cuarteles = stored.cuarteles ? JSON.parse(stored.cuarteles) : { cuarteles: [] };
+                this.labores = stored.labores ? JSON.parse(stored.labores) : { labores: [] };
+            },
+
+            save(dbName) {
+                localStorage.setItem(`db_${dbName}`, JSON.stringify(this[dbName]));
+                this.saveToFile(dbName);
+            },
+
+            saveToFile(dbName) {
+                // Auto-download JSON file to keep external file updated
+                const dataStr = JSON.stringify(this[dbName], null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `db_${dbName}.json`;
+                
+                // Auto-download (browsers may block this, user needs to allow)
+                // For production, this would use a server endpoint
+                console.log(`Base de datos actualizada: db_${dbName}.json`);
+                console.log(`Datos:`, this[dbName]);
+                
+                // Store trigger for manual download if needed
+                window.pendingDownloads = window.pendingDownloads || {};
+                window.pendingDownloads[dbName] = {
+                    blob: dataBlob,
+                    filename: `db_${dbName}.json`
+                };
+            },
+
+            downloadPending(dbName) {
+                if (window.pendingDownloads && window.pendingDownloads[dbName]) {
+                    const data = window.pendingDownloads[dbName];
+                    const url = URL.createObjectURL(data.blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = data.filename;
+                    link.click();
+                    URL.revokeObjectURL(url);
                 }
             }
         };
-        
-        // ==================== APLICACIÓN PRINCIPAL ====================
+
         const app = {
+            currentUser: null,
             currentFilteredData: [],
-            
+
             async init() {
-                if (!initSupabase()) return;
-                await MENUS.load();
-                this.checkAuth();
-            },
-            
-            checkAuth() {
-                const saved = localStorage.getItem('currentUser');
-                if (saved) {
-                    currentUser = JSON.parse(saved);
-                    this.showApp();
+                await loadConfig();
+                await DB.loadAll();
+                
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    this.currentUser = JSON.parse(savedUser);
+                    this.showMainApp();
                 } else {
-                    this.showLogin();
+                    // Populate config selects even before login for proper initialization
+                    this.populateConfigSelects();
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                if (document.getElementById('laborFecha')) {
+                    document.getElementById('laborFecha').value = today;
+                }
+
+                // Logo ya configurado en el HTML directamente
+            },
+
+
+
+            populateConfigSelects() {
+                // Populate cultivos
+                const cultivoSelect = document.getElementById('cuartelCultivo');
+                if (cultivoSelect) {
+                    cultivoSelect.innerHTML = '<option value="">-- Seleccione cultivo --</option>' +
+                        CONFIG.cultivos.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
+
+                // Populate sistemas de riego
+                const riegoSelect = document.getElementById('cuartelRiego');
+                if (riegoSelect) {
+                    riegoSelect.innerHTML = '<option value="">-- Seleccione sistema --</option>' +
+                        CONFIG.sistemasRiego.map(r => `<option value="${r}">${r}</option>`).join('');
                 }
             },
-            
-            showLogin() {
-                document.getElementById('app').innerHTML = `
-                    <div class="auth-screen">
-                        <div class="auth-card">
-                            <div class="auth-logo">
-                                <div class="auth-logo-icon">${LOGO_URL ? `<img src="${LOGO_URL}" alt="Logo">` : '🌾'}</div>
-                                <h1 style="font-family: 'Crimson Pro', serif; color: #2d5016; margin-top: 1rem;">AgroData360</h1>
-                                <p style="color: #666; margin-top: 0.5rem;">Sistema de Registro de Labores Agrícolas</p>
-                            </div>
-                            <div id="authAlert" style="display: none;"></div>
-                            <div class="form-group">
-                                <label>RUT</label>
-                                <input type="text" id="loginRut" placeholder="12-34567890-1">
-                            </div>
-                            <div class="form-group">
-                                <label>Contraseña</label>
-                                <input type="password" id="loginPassword" placeholder="••••••">
-                            </div>
-                            <button class="btn btn-primary" onclick="app.login()">Ingresar</button>
-                            <div style="text-align: center; margin-top: 1.5rem;">
-                                <a href="#" onclick="app.showRegister(); return false;" style="color: #2d5016; text-decoration: none; font-weight: 500;">Crear Nueva Cuenta</a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            },
-            
-            showRegister() {
-                document.getElementById('app').innerHTML = `
-                    <div class="auth-screen">
-                        <div class="auth-card">
-                            <div class="auth-logo">
-                                <div class="auth-logo-icon">${LOGO_URL ? `<img src="${'https://drive.google.com/file/d/14BJGgo8dO6QOsl1Qmgo7qqS1HToJW_5K/view?usp=drive_link'}" alt="Logo">` : '🌾'}</div>
-                                <h1 style="font-family: 'Crimson Pro', serif; color: #2d5016; margin-top: 1rem;">Crear Cuenta</h1>
-                            </div>
-                            <div id="authAlert" style="display: none;"></div>
-                            <div class="form-group">
-                                <label>RUT</label>
-                                <input type="text" id="regRut" placeholder="12-34567890-1">
-                            </div>
-                            <div class="form-group">
-                                <label>Nombre Completo</label>
-                                <input type="text" id="regNombre" placeholder="Juan Pérez">
-                            </div>
-                            <div class="form-group">
-                                <label>Contraseña</label>
-                                <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres">
-                            </div>
-                            <button class="btn btn-primary" onclick="app.register()">Registrarse</button>
-                            <div style="text-align: center; margin-top: 1.5rem;">
-                                <a href="#" onclick="app.showLogin(); return false;" style="color: #2d5016; text-decoration: none; font-weight: 500;">Ya tengo cuenta</a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            },
-            
-            async register() {
-                const rut = document.getElementById('regRut').value.trim();
-                const nombre = document.getElementById('regNombre').value.trim();
-                const password = document.getElementById('regPassword').value;
 
-                if (!rut || !nombre || !password) {
-                    this.showAuthAlert('Complete todos los campos');
+            updateVariedades() {
+                const cultivo = document.getElementById('cuartelCultivo').value;
+                const variedadSelect = document.getElementById('cuartelVariedad');
+                
+                if (cultivo && CONFIG.variedadesPorCultivo[cultivo]) {
+                    variedadSelect.innerHTML = '<option value="">-- Seleccione variedad --</option>' +
+                        CONFIG.variedadesPorCultivo[cultivo].map(v => `<option value="${v}">${v}</option>`).join('');
+                } else {
+                    variedadSelect.innerHTML = '<option value="">-- Primero seleccione cultivo --</option>';
+                }
+            },
+
+            toggleOtroRiego() {
+                const riego = document.getElementById('cuartelRiego').value;
+                const container = document.getElementById('otroRiegoContainer');
+                container.style.display = riego === 'Otro' ? 'block' : 'none';
+            },
+
+
+            searchProducts(tipo, searchTerm) {
+                const containerId = tipo === 'aplicacion' ? 'productosAplicacionContainer' : 'productosFertilizacionContainer';
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                const items = container.querySelectorAll('.multi-select-item');
+                searchTerm = searchTerm.toLowerCase();
+                
+                items.forEach(item => {
+                    const label = item.querySelector('label');
+                    if (label) {
+                        const text = label.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    }
+                });
+            },
+            updateLaborFields() {
+                const tipo = document.getElementById('laborTipo').value;
+                const container = document.getElementById('laborConditionalFields');
+                
+                if (!tipo) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                let html = '<div class="conditional-fields">';
+                html += `<div class="conditional-fields-title">Datos de ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</div>`;
+
+                switch(tipo) {
+                    case 'riego':
+                        html += `
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Tiempo (horas)</label>
+                                    <input type="number" id="laborTiempo" class="form-input" placeholder="Ej: 8" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jornales</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'aplicaciones':
+                        html += `
+                                                        <div class="form-group">
+                                <label class="form-label">Productos Utilizados</label>
+                                <input type="text" class="search-box" placeholder="🔍 Buscar productos..." oninput="app.searchProducts('aplicacion', this.value)">
+                                <div class="multi-select-container" id="productosAplicacionContainer">
+                                    ${CONFIG.productosAplicacion.map(p => `
+                                        <div class="multi-select-item">
+                                            <input type="checkbox" id="prod_${p.replace(/\s+/g, '_')}" value="${p}" onchange="app.toggleDosisInput('aplicacion', '${p.replace(/\s+/g, '_')}')">
+                                            <label for="prod_${p.replace(/\s+/g, '_')}">${p}</label>
+                                        </div>
+                                        <div id="dosis_prod_${p.replace(/\s+/g, '_')}" style="display:none;" class="dosis-input-group">
+                                            <input type="text" placeholder="Dosis (opcional)" class="dosis-input" data-producto="${p}">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Jornales</label>
+                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 3" step="0.5">
+                            </div>
+                        `;
+                        break;
+
+                    case 'fertilizacion':
+                        html += `
+                                                        <div class="form-group">
+                                <label class="form-label">Productos Utilizados</label>
+                                <input type="text" class="search-box" placeholder="🔍 Buscar productos..." oninput="app.searchProducts('fertilizacion', this.value)">
+                                <div class="multi-select-container" id="productosFertilizacionContainer">
+                                    ${CONFIG.productosFertilizacion.map(p => `
+                                        <div class="multi-select-item">
+                                            <input type="checkbox" id="fert_${p.replace(/\s+/g, '_')}" value="${p}" onchange="app.toggleDosisInput('fertilizacion', '${p.replace(/\s+/g, '_')}')">
+                                            <label for="fert_${p.replace(/\s+/g, '_')}">${p}</label>
+                                        </div>
+                                        <div id="dosis_fert_${p.replace(/\s+/g, '_')}" style="display:none;" class="dosis-input-group">
+                                            <input type="text" placeholder="Dosis (opcional)" class="dosis-input" data-producto="${p}">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Jornales</label>
+                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 3" step="0.5">
+                            </div>
+                        `;
+                        break;
+
+                    case 'labranzas':
+                        html += `
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Equipo Utilizado</label>
+                                    <select id="laborEquipo" class="form-input">
+                                        <option value="">-- Seleccione equipo --</option>
+                                        ${CONFIG.equiposLabranza.map(e => `<option value="${e}">${e}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jornales</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'cosecha':
+                        html += `
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Kg Cosechados</label>
+                                    <input type="number" id="laborKgCosechados" class="form-input" placeholder="Ej: 5000" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jornales</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 10" step="0.5">
+                                </div>
+                            </div>
+                        `;
+                        break;
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            toggleDosisInput(tipo, productoId) {
+                const checkbox = document.getElementById(`${tipo === 'aplicacion' ? 'prod' : 'fert'}_${productoId}`);
+                const dosisDiv = document.getElementById(`dosis_${tipo === 'aplicacion' ? 'prod' : 'fert'}_${productoId}`);
+                dosisDiv.style.display = checkbox.checked ? 'flex' : 'none';
+            },
+
+            validateRut(rut) {
+                const rutRegex = /^\d{2}-\d{7,8}-\d{1}$/;
+                return rutRegex.test(rut);
+            },
+
+            showAlert(elementId, message, type = 'danger') {
+                const alertDiv = document.getElementById(elementId);
+                alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                setTimeout(() => {
+                    alertDiv.innerHTML = '';
+                }, 5000);
+            },
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            },
+
+            showLogin() {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginAlert').innerHTML = '';
+                document.getElementById('registerAlert').innerHTML = '';
+            },
+
+            showRegister() {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('loginAlert').innerHTML = '';
+                document.getElementById('registerAlert').innerHTML = '';
+            },
+
+            async register() {
+                const rut = document.getElementById('registerRut').value.trim();
+                const name = document.getElementById('registerName').value.trim();
+                const password = document.getElementById('registerPassword').value;
+                const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+                if (!rut || !name || !password || !passwordConfirm) {
+                    this.showAlert('registerAlert', 'Por favor complete todos los campos');
+                    return;
+                }
+
+                if (!this.validateRut(rut)) {
+                    this.showAlert('registerAlert', 'El formato del RUT no es válido (XX-XXXXXXXX-X)');
                     return;
                 }
 
                 if (password.length < 6) {
-                    this.showAuthAlert('La contraseña debe tener al menos 6 caracteres');
+                    this.showAlert('registerAlert', 'La contraseña debe tener al menos 6 caracteres');
                     return;
                 }
 
-                const exists = await supabaseService.checkUserExists(rut);
-                if (exists) {
-                    this.showAuthAlert('El RUT ya está registrado');
+                if (password !== passwordConfirm) {
+                    this.showAlert('registerAlert', 'Las contraseñas no coinciden');
                     return;
                 }
 
-                const result = await supabaseService.registerUser(rut, nombre, password);
+                const existingUser = DB.usuarios.users.find(u => u.rut === rut);
+                if (existingUser) {
+                    this.showAlert('registerAlert', 'Ya existe un usuario registrado con este RUT', 'info');
+                    return;
+                }
+
+                const newUser = {
+                    rut: rut,
+                    name: name,
+                    password: password,
+                    createdAt: new Date().toISOString()
+                };
+
+                DB.usuarios.users.push(newUser);
+                DB.save('usuarios');
                 
-                if (result.success) {
-                    this.showAuthAlert('Usuario registrado exitosamente. Ya puede iniciar sesión.', 'success');
-                    setTimeout(() => this.showLogin(), 2000);
-                } else {
-                    this.showAuthAlert('Error al registrar: ' + result.error);
-                }
+                this.showAlert('registerAlert', 'Usuario registrado exitosamente. Ya puede ingresar.', 'success');
+                
+                setTimeout(() => {
+                    this.showLogin();
+                    document.getElementById('loginRut').value = rut;
+                }, 2000);
             },
-            
+
             async login() {
                 const rut = document.getElementById('loginRut').value.trim();
                 const password = document.getElementById('loginPassword').value;
 
                 if (!rut || !password) {
-                    this.showAuthAlert('Ingrese RUT y contraseña');
+                    this.showAlert('loginAlert', 'Por favor complete todos los campos');
                     return;
                 }
 
-                const result = await supabaseService.loginUser(rut, password);
-                
-                if (result.success) {
-                    currentUser = result.data;
-                    localStorage.setItem('currentUser', JSON.stringify(result.data));
-                    this.showApp();
-                } else {
-                    this.showAuthAlert('RUT o contraseña incorrectos');
+                if (!this.validateRut(rut)) {
+                    this.showAlert('loginAlert', 'El formato del RUT no es válido');
+                    return;
                 }
+
+                const user = DB.usuarios.users.find(u => u.rut === rut);
+                
+                if (!user) {
+                    this.showAlert('loginAlert', 'Usuario no encontrado. Verifique su RUT o cree una cuenta nueva.');
+                    return;
+                }
+
+                if (user.password !== password) {
+                    this.showAlert('loginAlert', 'Contraseña incorrecta');
+                    return;
+                }
+
+                this.currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                this.showMainApp();
             },
-            
+
             logout() {
-                if (confirm('¿Desea cerrar sesión?')) {
-                    currentUser = null;
-                    localStorage.removeItem('currentUser');
-                    localCache.fincas = [];
-                    localCache.cuarteles = [];
-                    localCache.labores = [];
-                    this.showLogin();
+                this.currentUser = null;
+                localStorage.removeItem('currentUser');
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                this.showLogin();
+            },
+
+            showMainApp() {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('userName').textContent = this.currentUser.name;
+                
+                // Re-populate config selects to ensure they're loaded
+                this.populateConfigSelects();
+                
+                this.loadFincas();
+                this.loadCuarteles();
+                this.loadLabores();
+                this.populateSelects();
+            },
+
+            switchTab(tabName) {
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                event.target.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabName + 'Tab').classList.add('active');
+
+                if (tabName === 'consultas') {
+                    this.filterLabores();
                 }
             },
-            
-            async showApp() {
-                await this.loadInitialData();
-                
-                document.getElementById('app').innerHTML = `
-                    <div class="header">
-                        <div class="header-content">
-                            <div class="logo">
-                                <div class="logo-icon">${LOGO_URL ? `<img src="${LOGO_URL}" alt="Logo">` : '🌾'}</div>
-                                <span>Cuaderno de Campo - AgroData360</span>
-                            </div>
-                            <div class="user-info">
-                                <span class="user-name">${currentUser.nombre}</span>
-                                <button class="btn-logout" onclick="app.logout()">Cerrar Sesión</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="main-content">
-                        <div class="tabs">
-                            <button class="tab-btn active" onclick="app.showTab('fincas')">🌾 Fincas</button>
-                            <button class="tab-btn" onclick="app.showTab('cuarteles')">📍 Cuarteles</button>
-                            <button class="tab-btn" onclick="app.showTab('labores')">📝 Labores</button>
-                            <button class="tab-btn" onclick="app.showTab('consultas')">📊 Consultas</button>
-                        </div>
-                        
-                        <div class="content-wrapper">
-                            <div id="fincas-tab" class="tab-content active">
-                                <div class="content-header">
-                                    <h2>Gestión de Fincas</h2>
-                                </div>
-                                <div class="card">
-                                    <h3>Agregar Nueva Finca</h3>
-                                    <div id="fincaAlert" style="display: none;"></div>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label>Nombre de la Finca *</label>
-                                            <input type="text" id="fincaNombre" placeholder="Ej: Finca Los Álamos">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Dirección *</label>
-                                            <input type="text" id="fincaDireccion" placeholder="Ej: Ruta 7 Km 1025">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Superficie (ha) *</label>
-                                            <input type="number" id="fincaSuperficie" step="0.01" placeholder="Ej: 25.5">
-                                        </div>
-                                    </div>
-                                    <button class="btn btn-primary" onclick="app.addFinca()">Agregar Finca</button>
-                                </div>
-                                
-                                <div class="card">
-                                    <h3>Mis Fincas</h3>
-                                    <div id="fincasList"></div>
-                                </div>
-                            </div>
-                            
-                            <div id="cuarteles-tab" class="tab-content">
-                                <div class="content-header">
-                                    <h2>Gestión de Cuarteles</h2>
-                                </div>
-                                <div class="card">
-                                    <h3>Agregar Nuevo Cuartel</h3>
-                                    <div id="cuartelAlert" style="display: none;"></div>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label>Finca *</label>
-                                            <select id="cuartelFinca">
-                                                <option value="">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Nombre del Cuartel *</label>
-                                            <input type="text" id="cuartelNombre" placeholder="Ej: Cuartel Norte">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Superficie (ha) *</label>
-                                            <input type="number" id="cuartelSuperficie" step="0.01" placeholder="Ej: 5.2">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Cultivo *</label>
-                                            <select id="cuartelCultivo" onchange="app.updateVariedades()">
-                                                <option value="">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Variedad</label>
-                                            <select id="cuartelVariedad">
-                                                <option value="">-- Primero seleccione cultivo --</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Sistema de Riego *</label>
-                                            <select id="cuartelRiego" onchange="app.toggleOtroRiego()">
-                                                <option value="">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group" id="otroRiegoContainer" style="display: none;">
-                                            <label>Especificar Sistema de Riego</label>
-                                            <input type="text" id="cuartelRiegoOtro" placeholder="Especifique el sistema">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Año de Implantación</label>
-                                            <input type="number" id="cuartelAnio" placeholder="Ej: 2015">
-                                        </div>
-                                        <div class="form-group">
-                                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                                <input type="checkbox" id="cuartelAntigranizo">
-                                                <span>Tiene Tela Antigranizo</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <button class="btn btn-primary" onclick="app.addCuartel()">Agregar Cuartel</button>
-                                </div>
-                                
-                                <div class="card">
-                                    <h3>Mis Cuarteles</h3>
-                                    <div id="cuartelesList"></div>
-                                </div>
-                            </div>
-                            
-                            <div id="labores-tab" class="tab-content">
-                                <div class="content-header">
-                                    <h2>Registro de Labores</h2>
-                                </div>
-                                <div class="card">
-                                    <h3>Nueva Labor</h3>
-                                    <div id="laborAlert" style="display: none;"></div>
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label>Tipo de Labor *</label>
-                                            <select id="laborTipo" onchange="app.updateLaborFields()">
-                                                <option value="">-- Seleccione --</option>
-                                                <option value="riego">🌊 Riego</option>
-                                                <option value="aplicaciones">🌿 Aplicaciones</option>
-                                                <option value="fertilizacion">🌱 Fertilización</option>
-                                                <option value="labranzas">🚜 Labranzas</option>
-                                                <option value="cosecha">🍇 Cosecha</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Cuartel *</label>
-                                            <select id="laborCuartel">
-                                                <option value="">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Fecha *</label>
-                                            <input type="date" id="laborFecha" value="${new Date().toISOString().split('T')[0]}">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Jornales</label>
-                                            <input type="number" id="laborJornales" placeholder="Número de jornales">
-                                        </div>
-                                    </div>
-                                    
-                                    <div id="laborSpecificFields"></div>
-                                    
-                                    <div class="form-group">
-                                        <label>Observaciones</label>
-                                        <textarea id="laborObservaciones" rows="3" placeholder="Observaciones adicionales..."></textarea>
-                                    </div>
-                                    
-                                    <button class="btn btn-primary" onclick="app.addLabor()">Registrar Labor</button>
-                                </div>
-                                
-                                <div class="card">
-                                    <h3>Últimas Labores Registradas</h3>
-                                    <div id="laboresList"></div>
-                                </div>
-                            </div>
-                            
-                            <div id="consultas-tab" class="tab-content">
-                                <div class="content-header">
-                                    <h2>Consultas y Reportes</h2>
-                                </div>
-                                <div class="card">
-                                    <h3>Filtros de Búsqueda</h3>
-                                    <div class="form-grid">
-                                         <div class="form-group">
-                                            <label>Finca</label>
-                                            <select id="consultaFinca">
-                                                <option value="">Todos</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Tipo de Labor</label>
-                                            <select id="consultaTipo">
-                                                <option value="">Todas</option>
-                                                <option value="riego">Riego</option>
-                                                <option value="aplicaciones">Aplicaciones</option>
-                                                <option value="fertilizacion">Fertilización</option>
-                                                <option value="labranzas">Labranzas</option>
-                                                <option value="cosecha">Cosecha</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Cuartel</label>
-                                            <select id="consultaCuartel">
-                                                <option value="">Todos</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Fecha Desde</label>
-                                            <input type="date" id="consultaFechaDesde">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Fecha Hasta</label>
-                                            <input type="date" id="consultaFechaHasta">
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; gap: 1rem;">
-                                        <button class="btn btn-primary" onclick="app.filterLabores()">Buscar</button>
-                                        <button class="btn btn-secondary" onclick="app.exportToExcel()">📥 Exportar a Excel</button>
-                                    </div>
-                                </div>
-                                
-                                <div class="card">
-                                    <h3>Resultados</h3>
-                                    <div id="consultaResults"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                this.populateMenus();
-                this.showTab('fincas');
-            },
-            
-            async loadInitialData() {
-                await this.loadFincas();
-                await this.loadCuarteles();
-                await this.loadRecentLabores();
-            },
-            
-            // ==================== GESTIÓN DE FINCAS ====================
-            
-            async addFinca() {
+
+            addFinca() {
                 const nombre = document.getElementById('fincaNombre').value.trim();
                 const direccion = document.getElementById('fincaDireccion').value.trim();
                 const superficie = document.getElementById('fincaSuperficie').value;
 
                 if (!nombre || !direccion || !superficie) {
-                    this.showAlert('fincaAlert', 'Complete todos los campos obligatorios');
+                    this.showAlert('fincaAlert', 'Por favor complete todos los campos');
                     return;
                 }
 
                 const finca = {
-                    user_id: currentUser.rut,
+                    id: 'finca_' + Date.now(),
+                    userId: this.currentUser.rut,
                     nombre,
                     direccion,
-                    superficie: parseFloat(superficie)
+                    superficie: parseFloat(superficie),
+                    createdAt: new Date().toISOString()
                 };
 
-                const result = await supabaseService.addFinca(finca);
+                DB.fincas.fincas.push(finca);
+                DB.save('fincas');
                 
-                if (result.success) {
-                    this.showAlert('fincaAlert', 'Finca agregada exitosamente', 'success');
-                    this.showNotification('✓ Finca registrada');
-                    
-                    document.getElementById('fincaNombre').value = '';
-                    document.getElementById('fincaDireccion').value = '';
-                    document.getElementById('fincaSuperficie').value = '';
-                    
-                    await this.loadFincas();
-                    await this.populateSelects();
-                } else {
-                    this.showAlert('fincaAlert', 'Error: ' + result.error);
-                }
+                this.showAlert('fincaAlert', 'Finca agregada exitosamente', 'success');
+                this.showNotification('✓ Finca registrada');
+                
+                document.getElementById('fincaNombre').value = '';
+                document.getElementById('fincaDireccion').value = '';
+                document.getElementById('fincaSuperficie').value = '';
+                
+                this.loadFincas();
+                this.populateSelects();
             },
-            
-            async loadFincas() {
-                const result = await supabaseService.getFincas(currentUser.rut);
-                
-                if (!result.success) {
-                    console.error('Error cargando fincas:', result.error);
-                    return;
-                }
-                
-                const fincas = result.data;
-                localCache.fincas = fincas;
-                
+
+            loadFincas() {
+                const fincas = DB.fincas.fincas.filter(f => f.userId === this.currentUser.rut);
                 const listDiv = document.getElementById('fincasList');
-                if (!listDiv) return;
                 
                 if (fincas.length === 0) {
-                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌾</div><p>No hay fincas registradas</p></div>';
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌾</div><p>No hay fincas registradas aún</p></div>';
                     return;
                 }
 
@@ -1259,7 +2287,9 @@
                     <div class="list-item">
                         <div class="list-item-content">
                             <div class="list-item-title">${finca.nombre}</div>
-                            <div class="list-item-subtitle">${finca.direccion} • ${finca.superficie} ha</div>
+                            <div class="list-item-subtitle">
+                                ${finca.direccion} • ${finca.superficie} ha
+                            </div>
                         </div>
                         <div class="list-item-actions">
                             <button class="btn-small btn-delete" onclick="app.deleteFinca('${finca.id}')">Eliminar</button>
@@ -1267,27 +2297,25 @@
                     </div>
                 `).join('');
             },
-            
-            async deleteFinca(fincaId) {
-                if (!confirm('¿Eliminar esta finca? Se eliminarán también sus cuarteles y labores.')) {
+
+            deleteFinca(fincaId) {
+                if (!confirm('¿Está seguro de eliminar esta finca? Se eliminarán también sus cuarteles y labores asociadas.')) {
                     return;
                 }
 
-                const result = await supabaseService.deleteFinca(fincaId);
+                DB.fincas.fincas = DB.fincas.fincas.filter(f => f.id !== fincaId);
+                DB.cuarteles.cuarteles = DB.cuarteles.cuarteles.filter(c => c.fincaId !== fincaId);
                 
-                if (result.success) {
-                    this.showNotification('✓ Finca eliminada');
-                    await this.loadFincas();
-                    await this.loadCuarteles();
-                    await this.populateSelects();
-                } else {
-                    this.showNotification('✗ Error al eliminar');
-                }
+                DB.save('fincas');
+                DB.save('cuarteles');
+                
+                this.showNotification('✓ Finca eliminada');
+                this.loadFincas();
+                this.loadCuarteles();
+                this.populateSelects();
             },
-            
-            // ==================== GESTIÓN DE CUARTELES ====================
-            
-            async addCuartel() {
+
+            addCuartel() {
                 const fincaId = document.getElementById('cuartelFinca').value;
                 const nombre = document.getElementById('cuartelNombre').value.trim();
                 const superficie = document.getElementById('cuartelSuperficie').value;
@@ -1298,86 +2326,74 @@
                 const antigranizo = document.getElementById('cuartelAntigranizo').checked;
 
                 if (!fincaId || !nombre || !superficie || !cultivo || !riego) {
-                    this.showAlert('cuartelAlert', 'Complete todos los campos obligatorios');
+                    this.showAlert('cuartelAlert', 'Por favor complete todos los campos obligatorios (variedad es opcional)');
                     return;
                 }
 
-                let sistemaRiegoOtro = null;
                 if (riego === 'Otro') {
                     const otroRiego = document.getElementById('cuartelRiegoOtro').value.trim();
                     if (!otroRiego) {
-                        this.showAlert('cuartelAlert', 'Especifique el sistema de riego');
+                        this.showAlert('cuartelAlert', 'Por favor especifique el sistema de riego');
                         return;
                     }
-                    sistemaRiegoOtro = otroRiego;
+                    riego = otroRiego;
                 }
 
                 const cuartel = {
-                    user_id: currentUser.rut,
-                    finca_id: fincaId,
+                    id: 'cuartel_' + Date.now(),
+                    userId: this.currentUser.rut,
+                    fincaId,
                     nombre,
                     superficie: parseFloat(superficie),
                     cultivo,
                     variedad,
-                    sistema_riego: riego,
-                    sistema_riego_otro: sistemaRiegoOtro,
-                    anio_implantacion: anio ? parseInt(anio) : null,
-                    tela_antigranizo: antigranizo
+                    sistemaRiego: riego,
+                    anioImplantacion: anio || null,
+                    telaAntigranizo: antigranizo,
+                    createdAt: new Date().toISOString()
                 };
 
-                const result = await supabaseService.addCuartel(cuartel);
+                DB.cuarteles.cuarteles.push(cuartel);
+                DB.save('cuarteles');
                 
-                if (result.success) {
-                    this.showAlert('cuartelAlert', 'Cuartel agregado exitosamente', 'success');
-                    this.showNotification('✓ Cuartel registrado');
-                    
-                    document.getElementById('cuartelNombre').value = '';
-                    document.getElementById('cuartelSuperficie').value = '';
-                    document.getElementById('cuartelCultivo').value = '';
-                    document.getElementById('cuartelVariedad').value = '';
-                    document.getElementById('cuartelRiego').value = '';
-                    document.getElementById('cuartelRiegoOtro').value = '';
-                    document.getElementById('cuartelAnio').value = '';
-                    document.getElementById('cuartelAntigranizo').checked = false;
-                    document.getElementById('otroRiegoContainer').style.display = 'none';
-                    
-                    await this.loadCuarteles();
-                    await this.populateSelects();
-                } else {
-                    this.showAlert('cuartelAlert', 'Error: ' + result.error);
-                }
+                this.showAlert('cuartelAlert', 'Cuartel agregado exitosamente', 'success');
+                this.showNotification('✓ Cuartel registrado');
+                
+                document.getElementById('cuartelNombre').value = '';
+                document.getElementById('cuartelSuperficie').value = '';
+                document.getElementById('cuartelCultivo').value = '';
+                document.getElementById('cuartelVariedad').value = '';
+                document.getElementById('cuartelRiego').value = '';
+                document.getElementById('cuartelRiegoOtro').value = '';
+                document.getElementById('cuartelAnio').value = '';
+                document.getElementById('cuartelAntigranizo').checked = false;
+                document.getElementById('otroRiegoContainer').style.display = 'none';
+                
+                this.loadCuarteles();
+                this.populateSelects();
             },
-            
-            async loadCuarteles() {
-                const result = await supabaseService.getCuarteles(currentUser.rut);
-                
-                if (!result.success) {
-                    console.error('Error cargando cuarteles:', result.error);
-                    return;
-                }
-                
-                const cuarteles = result.data;
-                localCache.cuarteles = cuarteles;
-                
+
+            loadCuarteles() {
+                const cuarteles = DB.cuarteles.cuarteles.filter(c => c.userId === this.currentUser.rut);
                 const listDiv = document.getElementById('cuartelesList');
-                if (!listDiv) return;
                 
                 if (cuarteles.length === 0) {
-                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><p>No hay cuarteles registrados</p></div>';
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><p>No hay cuarteles registrados aún</p></div>';
                     return;
                 }
 
                 listDiv.innerHTML = cuarteles.map(cuartel => {
-                    const finca = localCache.fincas.find(f => f.id === cuartel.finca_id);
+                    const finca = DB.fincas.fincas.find(f => f.id === cuartel.fincaId);
                     const fincaNombre = finca ? finca.nombre : 'N/A';
+                    const variedadTexto = cuartel.variedad ? cuartel.variedad : 'Sin variedad';
                     
                     return `
                         <div class="list-item">
                             <div class="list-item-content">
                                 <div class="list-item-title">${cuartel.nombre}</div>
                                 <div class="list-item-subtitle">
-                                    Finca: ${fincaNombre} • ${cuartel.superficie} ha • ${cuartel.cultivo} - ${cuartel.variedad} • ${cuartel.sistema_riego}
-                                    ${cuartel.tela_antigranizo ? ' • Con antigranizo' : ''}
+                                    Finca: ${fincaNombre} • ${cuartel.superficie} ha • ${cuartel.cultivo} - ${variedadTexto} • Riego: ${cuartel.sistemaRiego}
+                                    ${cuartel.telaAntigranizo ? ' • Con antigranizo' : ''}
                                 </div>
                             </div>
                             <div class="list-item-actions">
@@ -1387,133 +2403,129 @@
                     `;
                 }).join('');
             },
-            
-            async deleteCuartel(cuartelId) {
-                if (!confirm('¿Eliminar este cuartel?')) return;
 
-                const result = await supabaseService.deleteCuartel(cuartelId);
-                
-                if (result.success) {
-                    this.showNotification('✓ Cuartel eliminado');
-                    await this.loadCuarteles();
-                    await this.populateSelects();
-                } else {
-                    this.showNotification('✗ Error');
+            deleteCuartel(cuartelId) {
+                if (!confirm('¿Está seguro de eliminar este cuartel?')) {
+                    return;
                 }
+
+                DB.cuarteles.cuarteles = DB.cuarteles.cuarteles.filter(c => c.id !== cuartelId);
+                DB.save('cuarteles');
+                
+                this.showNotification('✓ Cuartel eliminado');
+                this.loadCuarteles();
+                this.populateSelects();
             },
-            
-            // ==================== GESTIÓN DE LABORES ====================
-            
-            async addLabor() {
+
+            addLabor() {
                 const tipo = document.getElementById('laborTipo').value;
                 const cuartelId = document.getElementById('laborCuartel').value;
                 const fecha = document.getElementById('laborFecha').value;
-                const jornales = document.getElementById('laborJornales').value;
                 const observaciones = document.getElementById('laborObservaciones').value.trim();
 
                 if (!tipo || !cuartelId || !fecha) {
-                    this.showAlert('laborAlert', 'Complete los campos obligatorios');
+                    this.showAlert('laborAlert', 'Por favor complete los campos obligatorios');
                     return;
                 }
 
                 const labor = {
-                    user_id: currentUser.rut,
-                    cuartel_id: cuartelId,
-                    tipo: tipo,
-                    fecha: fecha,
-                    jornales: jornales ? parseInt(jornales) : null,
-                    observaciones: observaciones || null,
-                    tiempo: null,
-                    productos: null,
-                    equipo: null,
-                    kg_cosechados: null
+                    id: 'labor_' + Date.now(),
+                    userId: this.currentUser.rut,
+                    tipo,
+                    cuartelId,
+                    fecha,
+                    observaciones,
+                    createdAt: new Date().toISOString()
                 };
 
-                // Campos específicos según tipo
+                // Add specific fields based on tipo
+                const jornales = document.getElementById('laborJornales');
+                if (jornales) {
+                    labor.jornales = parseFloat(jornales.value) || 0;
+                }
+
                 switch(tipo) {
                     case 'riego':
-                        const tiempo = document.getElementById('riegoTiempo').value;
-                        if (!tiempo) {
-                            this.showAlert('laborAlert', 'Ingrese el tiempo de riego');
-                            return;
-                        }
-                        labor.tiempo = parseFloat(tiempo);
+                        labor.tiempo = parseFloat(document.getElementById('laborTiempo').value) || 0;
                         break;
-                        
+
                     case 'aplicaciones':
                     case 'fertilizacion':
-                        const productos = [];
-                        document.querySelectorAll(`input[name="${tipo}Producto"]:checked`).forEach(cb => {
-                            const dosis = document.getElementById(`${tipo}Dosis_${cb.value.replace(/\s/g, '_')}`);
-                            productos.push({
+                        const prefix = tipo === 'aplicaciones' ? 'prod' : 'fert';
+                        const checkboxes = document.querySelectorAll(`#${tipo === 'aplicaciones' ? 'productosAplicacionContainer' : 'productosFertilizacionContainer'} input[type="checkbox"]:checked`);
+                        
+                        labor.productos = [];
+                        checkboxes.forEach(cb => {
+                            const productoId = cb.id.replace(`${prefix}_`, '');
+                            const dosisInput = document.querySelector(`#dosis_${prefix}_${productoId} .dosis-input`);
+                            labor.productos.push({
                                 nombre: cb.value,
-                                dosis: dosis ? dosis.value.trim() || null : null
+                                dosis: dosisInput ? dosisInput.value : ''
                             });
                         });
-                        
-                        if (productos.length === 0) {
-                            this.showAlert('laborAlert', 'Seleccione al menos un producto');
+
+                        if (labor.productos.length === 0) {
+                            this.showAlert('laborAlert', 'Por favor seleccione al menos un producto');
                             return;
                         }
-                        labor.productos = productos;
                         break;
-                        
+
                     case 'labranzas':
-                        const equipo = document.getElementById('labranzaEquipo').value;
-                        if (!equipo) {
-                            this.showAlert('laborAlert', 'Seleccione el equipo');
+                        labor.equipo = document.getElementById('laborEquipo').value;
+                        if (!labor.equipo) {
+                            this.showAlert('laborAlert', 'Por favor seleccione un equipo');
                             return;
                         }
-                        labor.equipo = equipo;
                         break;
-                        
+
                     case 'cosecha':
-                        const kg = document.getElementById('cosechaKg').value;
-                        if (!kg) {
-                            this.showAlert('laborAlert', 'Ingrese los kg cosechados');
+                        labor.kgCosechados = parseFloat(document.getElementById('laborKgCosechados').value) || 0;
+                        if (labor.kgCosechados === 0) {
+                            this.showAlert('laborAlert', 'Por favor ingrese los kg cosechados');
                             return;
                         }
-                        labor.kg_cosechados = parseFloat(kg);
                         break;
                 }
 
-                const result = await supabaseService.addLabor(labor);
+                DB.labores.labores.push(labor);
+                DB.save('labores');
                 
-                if (result.success) {
-                    this.showAlert('laborAlert', 'Labor registrada exitosamente', 'success');
-                    this.showNotification('✓ Labor registrada');
-                    
-                    document.getElementById('laborTipo').value = '';
-                    document.getElementById('laborCuartel').value = '';
-                    document.getElementById('laborFecha').value = new Date().toISOString().split('T')[0];
-                    document.getElementById('laborJornales').value = '';
-                    document.getElementById('laborObservaciones').value = '';
-                    document.getElementById('laborSpecificFields').innerHTML = '';
-                    
-                    await this.loadRecentLabores();
-                } else {
-                    this.showAlert('laborAlert', 'Error: ' + result.error);
-                }
+                this.showAlert('laborAlert', 'Labor registrada exitosamente', 'success');
+                this.showNotification('✓ Labor registrada');
+                
+                // Clear form
+                document.getElementById('laborTipo').value = '';
+                document.getElementById('laborCuartel').value = '';
+                document.getElementById('laborObservaciones').value = '';
+                document.getElementById('laborFecha').value = new Date().toISOString().split('T')[0];
+                document.getElementById('laborConditionalFields').innerHTML = '';
+                
+                this.loadLabores();
             },
-            
-            async loadRecentLabores() {
-                const result = await supabaseService.getLabores(currentUser.rut);
-                
-                if (!result.success) {
-                    console.error('Error cargando labores:', result.error);
+
+
+            deleteLabor(laborId) {
+                if (!confirm('¿Está seguro de eliminar esta labor?')) {
                     return;
                 }
+
+                DB.labores.labores = DB.labores.labores.filter(l => l.id !== laborId);
+                DB.save('labores');
                 
-                const labores = result.data.slice(0, 10);
-                localCache.labores = result.data;
-                
+                this.showNotification('✓ Labor eliminada');
+                this.loadLabores();
+            },
+            loadLabores() {
+                const labores = DB.labores.labores.filter(l => l.userId === this.currentUser.rut);
                 const listDiv = document.getElementById('laboresList');
-                if (!listDiv) return;
                 
                 if (labores.length === 0) {
-                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No hay labores registradas</p></div>';
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No hay labores registradas aún</p></div>';
                     return;
                 }
+
+                labores.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                const recentLabores = labores.slice(0, 10);
 
                 listDiv.innerHTML = `
                     <div class="table-container">
@@ -1522,16 +2534,16 @@
                                 <tr>
                                     <th>Fecha</th>
                                     <th>Tipo</th>
-                                    <th>Cuartel</th>
+                                    <th>Finca/Cuartel</th>
                                     <th>Detalles</th>
                                     <th>Jornales</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${labores.map(labor => {
-                                    const cuartel = localCache.cuarteles.find(c => c.id === labor.cuartel_id);
-                                    const finca = cuartel ? localCache.fincas.find(f => f.id === cuartel.finca_id) : null;
+                                ${recentLabores.map(labor => {
+                                    const cuartel = DB.cuarteles.cuarteles.find(c => c.id === labor.cuartelId);
+                                    const finca = cuartel ? DB.fincas.fincas.find(f => f.id === cuartel.fincaId) : null;
                                     
                                     let detalles = '';
                                     switch(labor.tipo) {
@@ -1540,13 +2552,13 @@
                                             break;
                                         case 'aplicaciones':
                                         case 'fertilizacion':
-                                            detalles = labor.productos ? labor.productos.map(p => p.nombre).join(', ') : '';
+                                            detalles = labor.productos.map(p => p.nombre).join(', ');
                                             break;
                                         case 'labranzas':
-                                            detalles = labor.equipo || '';
+                                            detalles = labor.equipo;
                                             break;
                                         case 'cosecha':
-                                            detalles = `${labor.kg_cosechados} kg`;
+                                            detalles = `${labor.kgCosechados} kg`;
                                             break;
                                     }
                                     
@@ -1568,49 +2580,37 @@
                     </div>
                 `;
             },
-            
-            async deleteLabor(laborId) {
-                if (!confirm('¿Eliminar esta labor?')) return;
 
-                const result = await supabaseService.deleteLabor(laborId);
-                
-                if (result.success) {
-                    this.showNotification('✓ Labor eliminada');
-                    await this.loadRecentLabores();
-                } else {
-                    this.showNotification('✗ Error');
-                }
-            },
-            
-            async filterLabores() {
+            filterLabores() {
                 const tipo = document.getElementById('consultaTipo').value;
                 const fincaId = document.getElementById('consultaFinca').value;
                 const cuartelId = document.getElementById('consultaCuartel').value;
                 const fechaDesde = document.getElementById('consultaFechaDesde').value;
                 const fechaHasta = document.getElementById('consultaFechaHasta').value;
 
-                const filters = {
-                    tipo: tipo || null,
-                    fincaId: fincaId || null,
-                    cuartelId: cuartelId || null,
-                    fechaDesde: fechaDesde || null,
-                    fechaHasta: fechaHasta || null
-                };
+                let labores = DB.labores.labores.filter(l => l.userId === this.currentUser.rut);
 
-                const result = await supabaseService.getLabores(currentUser.rut, filters);
+                if (tipo) labores = labores.filter(l => l.tipo === tipo);
                 
-                if (!result.success) {
-                    console.error('Error filtrando labores:', result.error);
-                    return;
+                // Filtrar por finca
+                if (fincaId) {
+                    const cuartelesDeFinca = DB.cuarteles.cuarteles.filter(c => c.fincaId === fincaId).map(c => c.id);
+                    labores = labores.filter(l => cuartelesDeFinca.includes(l.cuartelId));
                 }
+                
+                if (cuartelId) labores = labores.filter(l => l.cuartelId === cuartelId);
+                if (fechaDesde) labores = labores.filter(l => l.fecha >= fechaDesde);
+                if (fechaHasta) labores = labores.filter(l => l.fecha <= fechaHasta);
 
-                const labores = result.data;
+                labores.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+                // Store for export
                 this.currentFilteredData = labores;
 
                 const resultsDiv = document.getElementById('consultaResults');
                 
                 if (labores.length === 0) {
-                    resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No se encontraron labores</p></div>';
+                    resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No se encontraron labores con los filtros seleccionados</p></div>';
                     return;
                 }
 
@@ -1630,8 +2630,8 @@
                             </thead>
                             <tbody>
                                 ${labores.map(labor => {
-                                    const cuartel = localCache.cuarteles.find(c => c.id === labor.cuartel_id);
-                                    const finca = cuartel ? localCache.fincas.find(f => f.id === cuartel.finca_id) : null;
+                                    const cuartel = DB.cuarteles.cuarteles.find(c => c.id === labor.cuartelId);
+                                    const finca = cuartel ? DB.fincas.fincas.find(f => f.id === cuartel.fincaId) : null;
                                     
                                     let detalles = '';
                                     switch(labor.tipo) {
@@ -1640,13 +2640,13 @@
                                             break;
                                         case 'aplicaciones':
                                         case 'fertilizacion':
-                                            detalles = labor.productos ? labor.productos.map(p => `${p.nombre}${p.dosis ? ` (${p.dosis})` : ''}`).join('; ') : '';
+                                            detalles = labor.productos.map(p => `${p.nombre}${p.dosis ? ` (${p.dosis})` : ''}`).join('; ');
                                             break;
                                         case 'labranzas':
-                                            detalles = `Equipo: ${labor.equipo || ''}`;
+                                            detalles = `Equipo: ${labor.equipo}`;
                                             break;
                                         case 'cosecha':
-                                            detalles = `Cosecha: ${labor.kg_cosechados} kg`;
+                                            detalles = `Cosecha: ${labor.kgCosechados} kg`;
                                             break;
                                     }
                                     
@@ -1667,226 +2667,56 @@
                     </div>
                 `;
             },
-            
-            // ==================== FUNCIONES AUXILIARES ====================
-            
-            updateLaborFields() {
-                const tipo = document.getElementById('laborTipo').value;
-                const container = document.getElementById('laborSpecificFields');
-                
-                if (!tipo) {
-                    container.innerHTML = '';
-                    return;
-                }
 
-                let html = '';
-                
-                switch(tipo) {
-                    case 'riego':
-                        html = `
-                            <div class="form-group">
-                                <label>Tiempo de Riego (horas) *</label>
-                                <input type="number" id="riegoTiempo" step="0.1" placeholder="Ej: 8">
-                            </div>
-                        `;
-                        break;
-                        
-                    case 'aplicaciones':
-                        html = `
-                            <div class="card" style="background: #f8f9fa; padding: 1rem; margin: 1rem 0;">
-                                <h4>Productos Aplicados *</h4>
-                                <div class="form-group">
-                                    <input type="text" id="aplicacionesSearch" placeholder="🔍 Buscar productos..." oninput="app.filterProductos('aplicaciones')">
-                                </div>
-                                <div id="aplicacionesProductos" style="max-height: 300px; overflow-y: auto;">
-                                    ${MENUS.productosAplicacion.map(prod => `
-                                        <div style="margin-bottom: 0.5rem;">
-                                            <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <input type="checkbox" name="aplicacionesProducto" value="${prod}">
-                                                <span>${prod}</span>
-                                            </label>
-                                            <input type="text" id="aplicacionesDosis_${prod.replace(/\s/g, '_')}" placeholder="Dosis (opcional)" style="margin-left: 1.5rem; width: calc(100% - 2rem);">
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                        break;
-                        
-                    case 'fertilizacion':
-                        html = `
-                            <div class="card" style="background: #f8f9fa; padding: 1rem; margin: 1rem 0;">
-                                <h4>Productos de Fertilización *</h4>
-                                <div class="form-group">
-                                    <input type="text" id="fertilizacionSearch" placeholder="🔍 Buscar productos..." oninput="app.filterProductos('fertilizacion')">
-                                </div>
-                                <div id="fertilizacionProductos" style="max-height: 300px; overflow-y: auto;">
-                                    ${MENUS.productosFertilizacion.map(prod => `
-                                        <div style="margin-bottom: 0.5rem;">
-                                            <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <input type="checkbox" name="fertilizacionProducto" value="${prod}">
-                                                <span>${prod}</span>
-                                            </label>
-                                            <input type="text" id="fertilizacionDosis_${prod.replace(/\s/g, '_')}" placeholder="Dosis (opcional)" style="margin-left: 1.5rem; width: calc(100% - 2rem);">
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                        break;
-                        
-                    case 'labranzas':
-                        html = `
-                            <div class="form-group">
-                                <label>Equipo Utilizado *</label>
-                                <select id="labranzaEquipo">
-                                    <option value="">-- Seleccione --</option>
-                                    ${MENUS.equiposLabranza.map(eq => `<option value="${eq}">${eq}</option>`).join('')}
-                                </select>
-                            </div>
-                        `;
-                        break;
-                        
-                    case 'cosecha':
-                        html = `
-                            <div class="form-group">
-                                <label>Kg Cosechados *</label>
-                                <input type="number" id="cosechaKg" step="0.01" placeholder="Ej: 12500">
-                            </div>
-                        `;
-                        break;
-                }
-                
-                container.innerHTML = html;
-            },
-            
-            filterProductos(tipo) {
-                const searchTerm = document.getElementById(`${tipo}Search`).value.toLowerCase();
-                const container = document.getElementById(`${tipo}Productos`);
-                const items = container.querySelectorAll('div[style*="margin-bottom"]');
-                
-                items.forEach(item => {
-                    const text = item.textContent.toLowerCase();
-                    item.style.display = text.includes(searchTerm) ? 'block' : 'none';
-                });
-            },
-            
-            populateMenus() {
-                // Poblar cultivos
-                const cultivoSelect = document.getElementById('cuartelCultivo');
-                if (cultivoSelect) {
-                    cultivoSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
-                        MENUS.cultivos.map(c => `<option value="${c}">${c}</option>`).join('');
-                }
-                
-                // Poblar sistemas de riego
-                const riegoSelect = document.getElementById('cuartelRiego');
-                if (riegoSelect) {
-                    riegoSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
-                        MENUS.sistemasRiego.map(r => `<option value="${r}">${r}</option>`).join('');
-                }
-                
-                this.populateSelects();
-            },
-            
-            async populateSelects() {
-                const fincas = localCache.fincas;
-                const cuarteles = localCache.cuarteles;
+            populateSelects() {
+                const fincas = DB.fincas.fincas.filter(f => f.userId === this.currentUser.rut);
+                const cuarteles = DB.cuarteles.cuarteles.filter(c => c.userId === this.currentUser.rut);
 
                 const fincaSelect = document.getElementById('cuartelFinca');
-                if (fincaSelect) {
-                    fincaSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
-                        fincas.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
-                }
+                fincaSelect.innerHTML = '<option value="">-- Seleccione una finca --</option>' +
+                    fincas.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+
+                // Select de fincas en consultas
+                const consultaFincaSelect = document.getElementById('consultaFinca');
+                consultaFincaSelect.innerHTML = '<option value="">Todas las fincas</option>' +
+                    fincas.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
 
                 const cuartelOptions = cuarteles.map(c => {
-                    const finca = fincas.find(f => f.id === c.finca_id);
+                    const finca = DB.fincas.fincas.find(f => f.id === c.fincaId);
                     return `<option value="${c.id}">${finca ? finca.nombre : 'N/A'} - ${c.nombre}</option>`;
                 }).join('');
 
-                const laborCuartel = document.getElementById('laborCuartel');
-                if (laborCuartel) {
-                    laborCuartel.innerHTML = '<option value="">-- Seleccione --</option>' + cuartelOptions;
+                document.getElementById('laborCuartel').innerHTML = '<option value="">-- Seleccione un cuartel --</option>' + cuartelOptions;
+                document.getElementById('consultaCuartel').innerHTML = '<option value="">Todos los cuarteles</option>' + cuartelOptions;
+            },
+
+            updateCuartelFilter() {
+                const fincaId = document.getElementById('consultaFinca').value;
+                const cuarteles = DB.cuarteles.cuarteles.filter(c => c.userId === this.currentUser.rut);
+                
+                let cuartelesFiltered = cuarteles;
+                if (fincaId) {
+                    cuartelesFiltered = cuarteles.filter(c => c.fincaId === fincaId);
                 }
-                
-                const consultaCuartel = document.getElementById('consultaCuartel');
-                if (consultaCuartel) {
-                    consultaCuartel.innerHTML = '<option value="">Todos</option>' + cuartelOptions;
-                }
+
+                const cuartelOptions = cuartelesFiltered.map(c => {
+                    const finca = DB.fincas.fincas.find(f => f.id === c.fincaId);
+                    return `<option value="${c.id}">${finca ? finca.nombre : 'N/A'} - ${c.nombre}</option>`;
+                }).join('');
+
+                document.getElementById('consultaCuartel').innerHTML = '<option value="">Todos los cuarteles</option>' + cuartelOptions;
             },
-            
-            updateVariedades() {
-                const cultivo = document.getElementById('cuartelCultivo').value;
-                const variedadSelect = document.getElementById('cuartelVariedad');
-                
-                if (!cultivo) {
-                    variedadSelect.innerHTML = '<option value="">-- Primero seleccione cultivo --</option>';
-                    return;
-                }
-                
-                const variedades = MENUS.variedades[cultivo] || [];
-                variedadSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
-                    variedades.map(v => `<option value="${v}">${v}</option>`).join('');
-            },
-            
-            toggleOtroRiego() {
-                const riego = document.getElementById('cuartelRiego').value;
-                const container = document.getElementById('otroRiegoContainer');
-                container.style.display = riego === 'Otro' ? 'block' : 'none';
-            },
-            
-            showTab(tabName) {
-                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                
-                event.target.classList.add('active');
-                document.getElementById(`${tabName}-tab`).classList.add('active');
-            },
-            
-            showAlert(containerId, message, type = 'error') {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                container.className = `alert alert-${type}`;
-                container.textContent = message;
-                container.style.display = 'block';
-                
-                setTimeout(() => {
-                    container.style.display = 'none';
-                }, 5000);
-            },
-            
-            showAuthAlert(message, type = 'error') {
-                const container = document.getElementById('authAlert');
-                if (!container) return;
-                
-                container.className = `alert alert-${type}`;
-                container.textContent = message;
-                container.style.display = 'block';
-            },
-            
-            showNotification(message) {
-                const notification = document.createElement('div');
-                notification.className = 'notification';
-                notification.textContent = message;
-                document.body.appendChild(notification);
-                
-                setTimeout(() => notification.classList.add('show'), 100);
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => notification.remove(), 300);
-                }, 3000);
-            },
-            
+
             exportToExcel() {
                 if (this.currentFilteredData.length === 0) {
                     this.showNotification('⚠ No hay datos para exportar');
                     return;
                 }
 
+                // Prepare data for Excel
                 const excelData = this.currentFilteredData.map(labor => {
-                    const cuartel = localCache.cuarteles.find(c => c.id === labor.cuartel_id);
-                    const finca = cuartel ? localCache.fincas.find(f => f.id === cuartel.finca_id) : null;
+                    const cuartel = DB.cuarteles.cuarteles.find(c => c.id === labor.cuartelId);
+                    const finca = cuartel ? DB.fincas.fincas.find(f => f.id === cuartel.fincaId) : null;
                     
                     const row = {
                         'Fecha': new Date(labor.fecha).toLocaleDateString('es-AR'),
@@ -1894,23 +2724,24 @@
                         'Finca': finca ? finca.nombre : 'N/A',
                         'Cuartel': cuartel ? cuartel.nombre : 'N/A',
                         'Cultivo': cuartel ? cuartel.cultivo : 'N/A',
-                        'Variedad': cuartel ? cuartel.variedad : 'N/A'
+                        'Variedad': cuartel ? (cuartel.variedad || 'Sin variedad') : 'N/A'
                     };
 
+                    // Add specific fields
                     switch(labor.tipo) {
                         case 'riego':
                             row['Tiempo (h)'] = labor.tiempo || '';
                             break;
                         case 'aplicaciones':
                         case 'fertilizacion':
-                            row['Productos'] = labor.productos ? labor.productos.map(p => p.nombre).join(', ') : '';
-                            row['Dosis'] = labor.productos ? labor.productos.map(p => p.dosis || '').join(', ') : '';
+                            row['Productos'] = labor.productos.map(p => p.nombre).join(', ');
+                            row['Dosis'] = labor.productos.map(p => p.dosis).join(', ');
                             break;
                         case 'labranzas':
                             row['Equipo'] = labor.equipo || '';
                             break;
                         case 'cosecha':
-                            row['Kg Cosechados'] = labor.kg_cosechados || '';
+                            row['Kg Cosechados'] = labor.kgCosechados || '';
                             break;
                     }
 
@@ -1920,20 +2751,531 @@
                     return row;
                 });
 
+                // Create workbook
                 const ws = XLSX.utils.json_to_sheet(excelData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Labores");
 
+                // Generate filename
                 const filename = `labores_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+                // Save file
                 XLSX.writeFile(wb, filename);
                 
-                this.showNotification('✓ Excel exportado');
+                this.showNotification('✓ Excel exportado exitosamente');
             }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             app.init();
         });
+
+        // Auto-logout al cerrar la pestaña/ventana
+        // Usamos sessionStorage para distinguir "cerrar pestaña" de "recargar página"
+        window.addEventListener('beforeunload', () => {
+            sessionStorage.setItem('_reloading', '1');
+        });
+
+        window.addEventListener('load', () => {
+            if (!sessionStorage.getItem('_reloading')) {
+                // Nueva pestaña o sesión fresca — limpiar sesión
+                localStorage.removeItem('currentUser');
+            }
+            sessionStorage.removeItem('_reloading');
+        });
+
+        // ================================================================
+        // SUPABASE CONFIG (from config-supabase.js inline)
+        // ================================================================
+        const SUPABASE_URL = 'https://ioycrbykhbfxudumrcsi.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_AC7lgoV5Ok4WXXZR3ZoJ3Q_U3OrlYc3';
+        let _supabase = null;
+        function getSupabase() {
+            if (!_supabase) {
+                try { _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn('Supabase no disponible:', e); }
+            }
+            return _supabase;
+        }
+
+        // ================================================================
+        // STOCK APP
+        // ================================================================
+        const stockApp = {
+            productos: [],
+            editingId: null,
+
+            async init() {
+                await this.cargarProductos();
+            },
+
+            async cargarProductos() {
+                const sb = getSupabase();
+                const userId = app.currentUser?.rut;
+                if (!userId) return;
+                if (sb) {
+                    const { data, error } = await sb.from('stock_productos').select('*').eq('user_id', userId).order('nombre');
+                    if (!error && data) {
+                        this.productos = data;
+                    } else {
+                        this.productos = this._loadLocal();
+                    }
+                } else {
+                    this.productos = this._loadLocal();
+                }
+                this.renderTabla();
+                this.renderStats();
+            },
+
+            _loadLocal() {
+                const raw = localStorage.getItem('stock_productos_' + (app.currentUser?.rut || ''));
+                return raw ? JSON.parse(raw) : [];
+            },
+            _saveLocal() {
+                localStorage.setItem('stock_productos_' + (app.currentUser?.rut || ''), JSON.stringify(this.productos));
+            },
+
+            openModal(id) {
+                document.getElementById(id).classList.add('open');
+                if (id === 'modalAgregarProducto') {
+                    this.editingId = null;
+                    document.getElementById('stockNombre').value = '';
+                    document.getElementById('stockCategoria').value = 'fungicida';
+                    document.getElementById('stockCantidad').value = '';
+                    document.getElementById('stockUnidad').value = 'L';
+                    document.getElementById('stockMinimo').value = '';
+                    document.getElementById('stockVencimiento').value = '';
+                    document.getElementById('stockObservaciones').value = '';
+                    document.getElementById('stockFormAlert').innerHTML = '';
+                }
+                if (id === 'modalMovimiento') {
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('movFecha').value = today;
+                    document.getElementById('movCantidad').value = '';
+                    document.getElementById('movMotivo').value = '';
+                }
+            },
+            closeModal(id) {
+                document.getElementById(id).classList.remove('open');
+            },
+
+            async guardarProducto() {
+                const nombre = document.getElementById('stockNombre').value.trim();
+                const categoria = document.getElementById('stockCategoria').value;
+                const cantidad = parseFloat(document.getElementById('stockCantidad').value);
+                const unidad = document.getElementById('stockUnidad').value;
+                const minimo = parseFloat(document.getElementById('stockMinimo').value) || 0;
+                const vencimiento = document.getElementById('stockVencimiento').value || null;
+                const observaciones = document.getElementById('stockObservaciones').value.trim();
+
+                if (!nombre || isNaN(cantidad) || cantidad < 0) {
+                    document.getElementById('stockFormAlert').innerHTML = '<div class="alert alert-danger">Complete nombre y cantidad válida.</div>';
+                    return;
+                }
+
+                const producto = {
+                    id: 'prod_' + Date.now(),
+                    user_id: app.currentUser.rut,
+                    nombre, categoria, cantidad, unidad,
+                    stock_minimo: minimo,
+                    vencimiento,
+                    observaciones,
+                    movimientos: [{ tipo: 'entrada', cantidad, fecha: new Date().toISOString().split('T')[0], motivo: 'Stock inicial' }],
+                    created_at: new Date().toISOString()
+                };
+
+                const sb = getSupabase();
+                if (sb) {
+                    const { data, error } = await sb.from('stock_productos').insert([{
+                        id: producto.id, user_id: producto.user_id, nombre, categoria,
+                        cantidad, unidad, stock_minimo: minimo, vencimiento, observaciones,
+                        movimientos: producto.movimientos
+                    }]).select();
+                    if (error) {
+                        // fallback to local
+                        this.productos.push(producto);
+                        this._saveLocal();
+                    } else {
+                        this.productos.push(data[0] || producto);
+                    }
+                } else {
+                    this.productos.push(producto);
+                    this._saveLocal();
+                }
+
+                this.closeModal('modalAgregarProducto');
+                this.renderTabla();
+                this.renderStats();
+                app.showNotification('✓ Producto agregado al stock');
+            },
+
+            abrirMovimiento(productoId, tipo) {
+                const p = this.productos.find(x => x.id === productoId);
+                if (!p) return;
+                document.getElementById('movProductoId').value = productoId;
+                document.getElementById('movTipo').value = tipo;
+                document.getElementById('movProductoNombre').value = p.nombre + ' (' + p.cantidad + ' ' + p.unidad + ')';
+                document.getElementById('modalMovTitle').textContent = tipo === 'entrada' ? '📥 Entrada al Stock' : '📤 Salida del Stock';
+                this.openModal('modalMovimiento');
+            },
+
+            async confirmarMovimiento() {
+                const productoId = document.getElementById('movProductoId').value;
+                const tipo = document.getElementById('movTipo').value;
+                const cant = parseFloat(document.getElementById('movCantidad').value);
+                const fecha = document.getElementById('movFecha').value;
+                const motivo = document.getElementById('movMotivo').value.trim();
+
+                if (!cant || cant <= 0) { alert('Ingrese una cantidad válida.'); return; }
+
+                const idx = this.productos.findIndex(x => x.id === productoId);
+                if (idx === -1) return;
+                const p = this.productos[idx];
+
+                if (tipo === 'salida' && cant > p.cantidad) {
+                    alert('No hay suficiente stock. Stock actual: ' + p.cantidad + ' ' + p.unidad);
+                    return;
+                }
+
+                const nuevaCantidad = tipo === 'entrada' ? p.cantidad + cant : p.cantidad - cant;
+                const movimiento = { tipo, cantidad: cant, fecha, motivo };
+                const movs = [...(p.movimientos || []), movimiento];
+
+                const sb = getSupabase();
+                if (sb) {
+                    await sb.from('stock_productos').update({ cantidad: nuevaCantidad, movimientos: movs }).eq('id', productoId);
+                }
+                this.productos[idx].cantidad = nuevaCantidad;
+                this.productos[idx].movimientos = movs;
+                this._saveLocal();
+
+                this.closeModal('modalMovimiento');
+                this.renderTabla();
+                this.renderStats();
+                app.showNotification(tipo === 'entrada' ? '✓ Entrada registrada' : '✓ Salida registrada');
+            },
+
+            verHistorial(productoId) {
+                const p = this.productos.find(x => x.id === productoId);
+                if (!p) return;
+                const movs = (p.movimientos || []).slice().reverse();
+                let html = movs.length ? '' : '<p style="text-align:center;color:#999;padding:2rem;">Sin movimientos registrados.</p>';
+                movs.forEach(m => {
+                    html += `<div class="historial-item">
+                        <span>${m.fecha} — ${m.motivo || 'Sin detalle'}</span>
+                        <span class="historial-${m.tipo}">${m.tipo === 'entrada' ? '+' : '-'}${m.cantidad} ${p.unidad}</span>
+                    </div>`;
+                });
+                document.getElementById('historialContent').innerHTML = `<h4 style="margin-bottom:1rem;color:var(--primary);">${p.nombre}</h4>` + html;
+                this.openModal('modalHistorial');
+            },
+
+            async eliminarProducto(productoId) {
+                if (!confirm('¿Eliminar este producto del stock? Esta acción no se puede deshacer.')) return;
+                const sb = getSupabase();
+                if (sb) await sb.from('stock_productos').delete().eq('id', productoId);
+                this.productos = this.productos.filter(x => x.id !== productoId);
+                this._saveLocal();
+                this.renderTabla();
+                this.renderStats();
+                app.showNotification('✓ Producto eliminado');
+            },
+
+            renderTabla() {
+                const tbody = document.getElementById('stockTableBody');
+                if (!this.productos.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">No hay productos en stock. Haga clic en "Agregar Producto" para comenzar.</td></tr>';
+                    return;
+                }
+                const today = new Date();
+                const in30 = new Date(); in30.setDate(today.getDate() + 30);
+                tbody.innerHTML = this.productos.map(p => {
+                    const isLow = p.stock_minimo > 0 && p.cantidad <= p.stock_minimo;
+                    const venc = p.vencimiento ? new Date(p.vencimiento) : null;
+                    const isVenc = venc && venc <= in30;
+                    let vencText = p.vencimiento ? p.vencimiento : '—';
+                    if (isVenc && venc > today) vencText = `<span style="color:#c07600;font-weight:700;">⚠️ ${p.vencimiento}</span>`;
+                    if (venc && venc < today) vencText = `<span style="color:var(--danger);font-weight:700;">❌ ${p.vencimiento}</span>`;
+                    return `<tr>
+                        <td>
+                            <div style="font-weight:600;">${p.nombre}</div>
+                            <div style="font-size:0.8rem;color:#999;">${p.observaciones || ''}</div>
+                        </td>
+                        <td><span class="stock-badge stock-badge-${p.categoria}">${p.categoria}</span></td>
+                        <td><span class="stock-qty ${isLow ? 'low' : ''}">${p.cantidad} ${p.unidad}</span>${isLow ? ' <span style="color:var(--danger);font-size:0.75rem;">▼ bajo mín.</span>' : ''}</td>
+                        <td>${p.stock_minimo ? p.stock_minimo + ' ' + p.unidad : '—'}</td>
+                        <td>${vencText}</td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn-mov btn-entrada" onclick="stockApp.abrirMovimiento('${p.id}','entrada')">+Entrada</button>
+                            <button class="btn-mov btn-salida" onclick="stockApp.abrirMovimiento('${p.id}','salida')">−Salida</button>
+                            <button class="btn-mov" onclick="stockApp.verHistorial('${p.id}')" style="background:#f0f0f0;border:1px solid #ccc;color:#555;">📋</button>
+                            <button class="btn-mov btn-salida" onclick="stockApp.eliminarProducto('${p.id}')" style="margin-left:0.25rem;">🗑</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            },
+
+            renderStats() {
+                const today = new Date();
+                const in30 = new Date(); in30.setDate(today.getDate() + 30);
+                document.getElementById('statTotal').textContent = this.productos.length;
+                document.getElementById('statBajos').textContent = this.productos.filter(p => p.stock_minimo > 0 && p.cantidad <= p.stock_minimo).length;
+                document.getElementById('statVencidos').textContent = this.productos.filter(p => p.vencimiento && new Date(p.vencimiento) <= in30).length;
+            },
+
+            imprimirStock() {
+                const today = new Date().toLocaleDateString('es-AR');
+                const rows = this.productos.map(p => `
+                    <tr>
+                        <td>${p.nombre}</td>
+                        <td>${p.categoria}</td>
+                        <td><strong>${p.cantidad} ${p.unidad}</strong></td>
+                        <td>${p.stock_minimo ? p.stock_minimo + ' ' + p.unidad : '—'}</td>
+                        <td>${p.vencimiento || '—'}</td>
+                        <td>${p.observaciones || '—'}</td>
+                    </tr>`).join('');
+                const printArea = document.getElementById('printArea');
+                printArea.style.display = 'block';
+                printArea.innerHTML = `
+                    <div style="font-family:Arial,sans-serif;padding:20px;max-width:900px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #2d5016;padding-bottom:12px;margin-bottom:20px;">
+                            <div>
+                                <h1 style="color:#2d5016;margin:0;font-size:1.6rem;">Cuaderno de Campo Digital Mendoza</h1>
+                                <h2 style="margin:4px 0 0;color:#555;font-size:1.1rem;">Stock de Agroquímicos — Remanente</h2>
+                            </div>
+                            <div style="text-align:right;color:#555;font-size:0.9rem;">
+                                <div>Usuario: <strong>${app.currentUser?.name || app.currentUser?.nombre || ''}</strong></div>
+                                <div>Fecha: <strong>${today}</strong></div>
+                            </div>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+                            <thead>
+                                <tr style="background:#2d5016;color:white;">
+                                    <th style="padding:10px;text-align:left;">Producto</th>
+                                    <th style="padding:10px;text-align:left;">Categoría</th>
+                                    <th style="padding:10px;text-align:left;">Stock Actual</th>
+                                    <th style="padding:10px;text-align:left;">Stock Mín.</th>
+                                    <th style="padding:10px;text-align:left;">Vencimiento</th>
+                                    <th style="padding:10px;text-align:left;">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                        <div style="margin-top:30px;border-top:1px solid #ccc;padding-top:15px;color:#777;font-size:0.8rem;">
+                            Total de productos: ${this.productos.length} | Documento generado el ${today}
+                        </div>
+                    </div>`;
+                window.print();
+                setTimeout(() => { printArea.style.display = 'none'; }, 500);
+            }
+        };
+
+        // ================================================================
+        // CALIBRACIÓN APP
+        // ================================================================
+        const calibApp = {
+            switchSection(name, btn) {
+                document.querySelectorAll('.calib-tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.calib-section').forEach(s => s.classList.remove('active'));
+                document.getElementById('calib' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+            },
+
+            renderPicosAtomizadora() {
+                const n = parseInt(document.getElementById('atomNPicos').value) || 0;
+                const grid = document.getElementById('picosAtomGrid');
+                if (n <= 0 || n > 60) { grid.innerHTML = '<p style="color:#999;font-size:0.9rem;">Ingrese un número de picos válido (1–60).</p>'; return; }
+                let html = '';
+                for (let i = 1; i <= n; i++) {
+                    html += `<div class="pico-item">
+                        <label>Pico ${i}</label>
+                        <input type="number" class="pico-input" id="atomPico${i}" placeholder="ml" min="0" step="1" oninput="calibApp.calcAtomizadora()">
+                    </div>`;
+                }
+                grid.innerHTML = html;
+            },
+
+            renderPicosBarral() {
+                const n = parseInt(document.getElementById('barrNPicos').value) || 0;
+                const grid = document.getElementById('picosBarralGrid');
+                if (n <= 0 || n > 80) { grid.innerHTML = '<p style="color:#999;font-size:0.9rem;">Ingrese un número de picos válido (1–80).</p>'; return; }
+                let html = '';
+                for (let i = 1; i <= n; i++) {
+                    html += `<div class="pico-item">
+                        <label>Pico ${i}</label>
+                        <input type="number" class="pico-input" id="barrPico${i}" placeholder="ml" min="0" step="1" oninput="calibApp.calcBarral()">
+                    </div>`;
+                }
+                grid.innerHTML = html;
+            },
+
+            _getCaudales(prefix, n) {
+                const vals = [];
+                for (let i = 1; i <= n; i++) {
+                    const el = document.getElementById(prefix + 'Pico' + i);
+                    if (el && el.value !== '') {
+                        const v = parseFloat(el.value);
+                        if (!isNaN(v) && v >= 0) vals.push({ idx: i, val: v });
+                    }
+                }
+                return vals;
+            },
+
+            _markOutliers(prefix, n, media, tol) {
+                const outliers = [];
+                for (let i = 1; i <= n; i++) {
+                    const el = document.getElementById(prefix + 'Pico' + i);
+                    if (!el || el.value === '') continue;
+                    const v = parseFloat(el.value);
+                    if (isNaN(v)) continue;
+                    const diff = Math.abs(v - media) / media;
+                    el.classList.remove('outlier', 'normal');
+                    if (diff > tol) { el.classList.add('outlier'); outliers.push(i); }
+                    else { el.classList.add('normal'); }
+                }
+                return outliers;
+            },
+
+            calcAtomizadora() {
+                const vel = parseFloat(document.getElementById('atomVelocidad').value);
+                const dist = parseFloat(document.getElementById('atomDistHileras').value);
+                const nPicos = parseInt(document.getElementById('atomNPicos').value) || 0;
+                const tMed = parseInt(document.getElementById('atomTiempoMed').value);
+
+                const caudales = this._getCaudales('atom', nPicos);
+                if (caudales.length === 0) { document.getElementById('atomResultado').innerHTML = ''; return; }
+
+                const vals = caudales.map(c => c.val);
+                const media = vals.reduce((a, b) => a + b, 0) / vals.length;
+                const std = Math.sqrt(vals.reduce((a, b) => a + Math.pow(b - media, 2), 0) / vals.length);
+                const cv = media > 0 ? (std / media * 100) : 0;
+
+                const outliers = this._markOutliers('atom', nPicos, media, 0.10);
+
+                // Q total en ml/min
+                const qTotalMlMin = (vals.reduce((a, b) => a + b, 0) / vals.length * nPicos) / (tMed / 60);
+                const qTotalLMin = qTotalMlMin / 1000;
+
+                let lha = null;
+                if (vel > 0 && dist > 0) {
+                    // L/ha = Q(L/min) * 60 / (V km/h * D m * (1000m/km * 1ha/10000m²))
+                    // Simplificado: L/ha = (Q_L_min * 600) / (V * D)
+                    lha = (qTotalLMin * 600) / (vel * dist);
+                }
+
+                let warnHTML = '';
+                if (outliers.length > 0) {
+                    warnHTML = `<div class="warning-box">⚠️ <strong>${outliers.length} pico(s) fuera de rango (±10%):</strong> Picos N° ${outliers.join(', ')}. Se recomienda revisar y/o reemplazar estas boquillas antes de aplicar.</div>`;
+                }
+                document.getElementById('atomOutlierWarning').innerHTML = warnHTML;
+
+                const cvColor = cv < 10 ? '#4a7c2a' : cv < 15 ? '#c07600' : '#c94c4c';
+                const cvIcon = cv < 10 ? '✅' : cv < 15 ? '⚠️' : '❌';
+
+                document.getElementById('atomResultado').innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Gasto por hectárea</div>
+                        <div class="result-main">${lha !== null ? lha.toFixed(0) : '—'}</div>
+                        <div class="result-unit">litros / hectárea</div>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-item-value">${media.toFixed(0)}</div>
+                                <div class="result-item-label">Media caudal (ml/${tMed}s)</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-value">${qTotalLMin.toFixed(2)}</div>
+                                <div class="result-item-label">Caudal total (L/min)</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-value" style="color:${cvColor};">${cvIcon} ${cv.toFixed(1)}%</div>
+                                <div class="result-item-label">Coef. de variación</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-value">${caudales.length}/${nPicos}</div>
+                                <div class="result-item-label">Picos medidos</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${cv >= 10 ? `<div class="warning-box" style="margin-top:1rem;">El coeficiente de variación (${cv.toFixed(1)}%) supera el 10%. La distribución no es uniforme. Revisar y reemplazar los picos marcados en rojo.</div>` : '<div class="info-box" style="margin-top:1rem;">✅ Distribución uniforme. El coeficiente de variación está dentro del rango aceptable (&lt;10%).</div>'}`;
+            },
+
+            calcBarral() {
+                const vel = parseFloat(document.getElementById('barrVelocidad').value);
+                const distCm = parseFloat(document.getElementById('barrDistPicos').value);
+                const nPicos = parseInt(document.getElementById('barrNPicos').value) || 0;
+                const tMed = parseInt(document.getElementById('barrTiempoMed').value);
+
+                const caudales = this._getCaudales('barr', nPicos);
+                if (caudales.length === 0) { document.getElementById('barrResultado').innerHTML = ''; return; }
+
+                const vals = caudales.map(c => c.val);
+                const media = vals.reduce((a, b) => a + b, 0) / vals.length;
+                const std = Math.sqrt(vals.reduce((a, b) => a + Math.pow(b - media, 2), 0) / vals.length);
+                const cv = media > 0 ? (std / media * 100) : 0;
+
+                const outliers = this._markOutliers('barr', nPicos, media, 0.10);
+
+                // q por pico en ml/min
+                const qPicoMlMin = media / (tMed / 60);
+                const qPicoLMin = qPicoMlMin / 1000;
+                const distM = distCm / 100;
+
+                let lha = null;
+                if (vel > 0 && distM > 0) {
+                    // L/ha = (q_L_min * 600) / (V_km_h * dist_m)
+                    lha = (qPicoLMin * 600) / (vel * distM);
+                }
+
+                let warnHTML = '';
+                if (outliers.length > 0) {
+                    warnHTML = `<div class="warning-box">⚠️ <strong>${outliers.length} pico(s) fuera de rango (±10%):</strong> Picos N° ${outliers.join(', ')}. Se recomienda revisar y/o reemplazar estas boquillas.</div>`;
+                }
+                document.getElementById('barrOutlierWarning').innerHTML = warnHTML;
+
+                const cvColor = cv < 10 ? '#4a7c2a' : cv < 15 ? '#c07600' : '#c94c4c';
+                const cvIcon = cv < 10 ? '✅' : cv < 15 ? '⚠️' : '❌';
+
+                document.getElementById('barrResultado').innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Gasto por hectárea</div>
+                        <div class="result-main">${lha !== null ? lha.toFixed(0) : '—'}</div>
+                        <div class="result-unit">litros / hectárea</div>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-item-value">${media.toFixed(0)}</div>
+                                <div class="result-item-label">Media caudal (ml/${tMed}s)</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-value">${qPicoLMin.toFixed(3)}</div>
+                                <div class="result-item-label">Caudal/pico (L/min)</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-value" style="color:${cvColor};">${cvIcon} ${cv.toFixed(1)}%</div>
+                                <div class="result-item-label">Coef. de variación</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-value">${(nPicos * distM).toFixed(1)} m</div>
+                                <div class="result-item-label">Ancho de labor</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${cv >= 10 ? `<div class="warning-box" style="margin-top:1rem;">El coeficiente de variación (${cv.toFixed(1)}%) supera el 10%. La distribución no es uniforme. Revisar los picos marcados en rojo.</div>` : '<div class="info-box" style="margin-top:1rem;">✅ Distribución uniforme. El coeficiente de variación está dentro del rango aceptable (&lt;10%).</div>'}`;
+            }
+        };
+
+        // Override switchTab to initialize stock when needed
+        const _origSwitchTab = app.switchTab.bind(app);
+        app.switchTab = function(tabName) {
+            _origSwitchTab(tabName);
+            if (tabName === 'stock') {
+                stockApp.init();
+            }
+        };
+
+        // Also init stock when main app shows
+        const _origShowMainApp = app.showMainApp.bind(app);
+        app.showMainApp = function() {
+            _origShowMainApp();
+        };
     </script>
 </body>
 </html>
