@@ -1142,7 +1142,9 @@
                     <p class="auth-subtitle">Sistema de Registro de Labores Agrícolas — Mendoza</p>
                     <div class="logo-upload-section">
                         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">
-                            
+                            Para personalizar el logo, editar la línea 8 del archivo HTML:<br>
+                            <code style="background: #f0f0f0; padding: 0.3rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.5rem;">
+                            const LOGO_URL = 'URL_DE_TU_LOGO_AQUI';
                             </code>
                         </p>
                     </div>
@@ -1210,6 +1212,7 @@
                     <button class="tab" onclick="app.switchTab('labores')">Labores</button>
                     <button class="tab" onclick="app.switchTab('consultas')">Consultas</button>
                     <button class="tab" onclick="app.switchTab('stock')">Stock</button>
+                    <button class="tab" onclick="app.switchTab('monitoreo')">Monitoreo</button>
                     <button class="tab" onclick="app.switchTab('calibracion')">Calibración</button>
                 </div>
 
@@ -1324,10 +1327,11 @@
                                 <select id="laborTipo" class="form-input" onchange="app.updateLaborFields()">
                                     <option value="">-- Seleccione --</option>
                                     <option value="riego">Riego</option>
-                                    <option value="aplicaciones">Aplicaciones</option>
+                                    <option value="aplicaciones">Aplicaciones Fitosanitarias</option>
                                     <option value="fertilizacion">Fertilización</option>
-                                    <option value="labranzas">Labranzas</option>
+                                    <option value="labranzas">Labores Culturales</option>
                                     <option value="cosecha">Cosecha</option>
+                                    <option value="esterilizacion">Esterilización de Sustratos</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1386,10 +1390,11 @@
                                     <select id="consultaTipo" class="form-input" onchange="app.filterLabores()">
                                         <option value="">Todas las labores</option>
                                         <option value="riego">Riego</option>
-                                        <option value="aplicaciones">Aplicaciones</option>
+                                        <option value="aplicaciones">Aplicaciones Fitosanitarias</option>
                                         <option value="fertilizacion">Fertilización</option>
-                                        <option value="labranzas">Labranzas</option>
+                                        <option value="labranzas">Labores Culturales</option>
                                         <option value="cosecha">Cosecha</option>
+                                        <option value="esterilizacion">Esterilización de Sustratos</option>
                                     </select>
                                 </div>
                             </div>
@@ -1425,12 +1430,23 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Categoría</label>
-                                    <select id="stockCategoria" class="form-input">
-                                        <option value="fungicida">Fungicida</option>
-                                        <option value="insecticida">Insecticida</option>
-                                        <option value="herbicida">Herbicida</option>
-                                        <option value="fertilizante">Fertilizante</option>
-                                        <option value="otro">Otro</option>
+                                    <select id="stockCategoria" class="form-input" onchange="stockApp.onCategoriaChange()">
+                                        <optgroup label="Agroquímicos">
+                                            <option value="fungicida">Fungicida</option>
+                                            <option value="insecticida">Insecticida</option>
+                                            <option value="herbicida">Herbicida</option>
+                                            <option value="acaricida">Acaricida</option>
+                                            <option value="fitorregulador">Fitorregulador</option>
+                                            <option value="coadyuvante">Coadyuvante</option>
+                                            <option value="otro_agro">Otro agroquímico</option>
+                                        </optgroup>
+                                        <optgroup label="Fertilizantes">
+                                            <option value="fertilizante_solido">Fertilizante sólido</option>
+                                            <option value="fertilizante_liquido">Fertilizante líquido</option>
+                                            <option value="enmienda">Enmienda orgánica</option>
+                                            <option value="bioestimulante">Bioestimulante</option>
+                                            <option value="otro_fert">Otro fertilizante</option>
+                                        </optgroup>
                                     </select>
                                 </div>
                             </div>
@@ -1511,38 +1527,51 @@
                         </div>
                     </div>
 
+
                     <!-- Stock Main Card -->
                     <div class="card">
                         <div class="stock-header">
-                            <h2 class="card-title" style="margin-bottom:0;">🧪 Stock de Agroquímicos</h2>
+                            <h2 class="card-title" style="margin-bottom:0;">Stock de Insumos</h2>
                             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
                                 <button class="btn btn-add" onclick="stockApp.openModal('modalAgregarProducto')">+ Agregar Producto</button>
                                 <button class="btn-pdf" onclick="stockApp.imprimirStock()">🖨️ Imprimir Stock PDF</button>
                             </div>
                         </div>
 
-                        <div class="stock-summary" id="stockSummary">
-                            <div class="stock-stat"><div class="stock-stat-value" id="statTotal">0</div><div class="stock-stat-label">Productos en stock</div></div>
-                            <div class="stock-stat" style="background:linear-gradient(135deg,#c94c4c,#e06060);"><div class="stock-stat-value" id="statBajos">0</div><div class="stock-stat-label">Stock bajo mínimo</div></div>
-                            <div class="stock-stat" style="background:linear-gradient(135deg,#8b6000,#c07600);"><div class="stock-stat-value" id="statVencidos">0</div><div class="stock-stat-label">Por vencer (30 días)</div></div>
+                        <!-- Sub-tabs -->
+                        <div class="calib-tabs" style="margin-bottom:1.5rem;">
+                            <button class="calib-tab active" id="stockTabAgro" onclick="stockApp.switchCategoria('agroquimicos', this)">Agroquímicos</button>
+                            <button class="calib-tab" id="stockTabFert" onclick="stockApp.switchCategoria('fertilizantes', this)">Fertilizantes</button>
                         </div>
 
-                        <div class="stock-table-container">
-                            <table class="stock-table" id="stockTable">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th>Categoría</th>
-                                        <th>Stock Actual</th>
-                                        <th>Mínimo</th>
-                                        <th>Vencimiento</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stockTableBody">
-                                    <tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">Cargando stock...</td></tr>
-                                </tbody>
-                            </table>
+                        <!-- Stats - Agroquímicos -->
+                        <div id="stockSummaryAgro">
+                            <div class="stock-summary">
+                                <div class="stock-stat"><div class="stock-stat-value" id="statTotalAgro">0</div><div class="stock-stat-label">Agroquímicos en stock</div></div>
+                                <div class="stock-stat" style="background:linear-gradient(135deg,#c94c4c,#e06060);"><div class="stock-stat-value" id="statBajosAgro">0</div><div class="stock-stat-label">Stock bajo mínimo</div></div>
+                                <div class="stock-stat" style="background:linear-gradient(135deg,#8b6000,#c07600);"><div class="stock-stat-value" id="statVencidosAgro">0</div><div class="stock-stat-label">Por vencer (30 días)</div></div>
+                            </div>
+                            <div class="stock-table-container">
+                                <table class="stock-table">
+                                    <thead><tr><th>Producto</th><th>Categoría</th><th>Stock Actual</th><th>Mínimo</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                                    <tbody id="stockTableBodyAgro"><tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">Cargando...</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Stats - Fertilizantes -->
+                        <div id="stockSummaryFert" style="display:none;">
+                            <div class="stock-summary">
+                                <div class="stock-stat"><div class="stock-stat-value" id="statTotalFert">0</div><div class="stock-stat-label">Fertilizantes en stock</div></div>
+                                <div class="stock-stat" style="background:linear-gradient(135deg,#c94c4c,#e06060);"><div class="stock-stat-value" id="statBajosFert">0</div><div class="stock-stat-label">Stock bajo mínimo</div></div>
+                                <div class="stock-stat" style="background:linear-gradient(135deg,#8b6000,#c07600);"><div class="stock-stat-value" id="statVencidosFert">0</div><div class="stock-stat-label">Por vencer (30 días)</div></div>
+                            </div>
+                            <div class="stock-table-container">
+                                <table class="stock-table">
+                                    <thead><tr><th>Producto</th><th>Tipo</th><th>Stock Actual</th><th>Mínimo</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                                    <tbody id="stockTableBodyFert"><tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">Cargando...</td></tr></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -1550,12 +1579,120 @@
                     <div id="printArea" style="display:none;"></div>
                 </div>
 
+                <!-- ===================== MONITOREO DE PLAGAS TAB ===================== -->
+                <div id="monitoreoTab" class="tab-content">
+                    <div class="card">
+                        <div class="section-header">
+                            <h2 class="card-title">Monitoreo de Plagas y Enfermedades</h2>
+                            <button class="btn btn-add" onclick="monitoreoApp.mostrarFormulario()">+ Nuevo Registro</button>
+                        </div>
+
+                        <!-- Form -->
+                        <div id="monitoreoForm" style="display:none;" class="conditional-fields" style="margin-bottom:1.5rem;">
+                            <div class="conditional-fields-title">Nuevo Registro de Monitoreo</div>
+                            <div id="monitoreoAlert"></div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Fecha *</label>
+                                    <input type="date" id="monFecha" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Cuartel *</label>
+                                    <select id="monCuartel" class="form-input">
+                                        <option value="">-- Seleccione cuartel --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Plaga / Enfermedad monitoreada *</label>
+                                <input type="text" id="monPlaga" class="form-input" placeholder="Ej: Oidio, Trips, Lobesia botrana, Polilla del racimo">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Punto de muestreo</label>
+                                    <input type="text" id="monPuntoMuestreo" class="form-input" placeholder="Ej: Trampa Nº 3, Hoja, Racimo, Brote">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Ubicación — Hilera</label>
+                                    <input type="text" id="monHilera" class="form-input" placeholder="Ej: Hilera 5, Norte">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Ubicación — Planta</label>
+                                    <input type="text" id="monPlanta" class="form-input" placeholder="Ej: Planta 12, Centro del cuartel">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nivel de infestación</label>
+                                    <select id="monNivel" class="form-input">
+                                        <option value="">-- Seleccione --</option>
+                                        <option value="ausente">Ausente</option>
+                                        <option value="bajo">Bajo (por debajo del umbral)</option>
+                                        <option value="medio">Medio (en umbral)</option>
+                                        <option value="alto">Alto (supera umbral)</option>
+                                        <option value="critico">Crítico</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Observaciones</label>
+                                <textarea id="monObservaciones" class="form-input" placeholder="Describa lo observado: presencia de adultos, larvas, síntomas, porcentaje de órganos afectados, etc." style="min-height:70px;"></textarea>
+                            </div>
+                            <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+                                <button class="btn btn-add" onclick="monitoreoApp.guardar()">Guardar Registro</button>
+                                <button class="btn" style="background:#f0f0f0;color:#555;" onclick="monitoreoApp.ocultarFormulario()">Cancelar</button>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="filter-section" style="margin-bottom:1.5rem;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Filtrar por cuartel</label>
+                                    <select id="monFiltroCuartel" class="form-input" onchange="monitoreoApp.filtrar()">
+                                        <option value="">Todos los cuarteles</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Desde</label>
+                                    <input type="date" id="monFiltroDesde" class="form-input" onchange="monitoreoApp.filtrar()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Hasta</label>
+                                    <input type="date" id="monFiltroHasta" class="form-input" onchange="monitoreoApp.filtrar()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-container">
+                            <table id="monitoreoTable">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cuartel</th>
+                                        <th>Plaga / Enfermedad</th>
+                                        <th>Punto de Muestreo</th>
+                                        <th>Ubicación (Hilera / Planta)</th>
+                                        <th>Nivel</th>
+                                        <th>Observaciones</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monitoreoTableBody">
+                                    <tr><td colspan="8" style="text-align:center;padding:3rem;color:#999;">No hay registros de monitoreo. Haga clic en "+ Nuevo Registro".</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ===================== CALIBRACIÓN TAB ===================== -->
                 <div id="calibracionTab" class="tab-content">
                     <div class="card">
                         <div class="calib-tabs">
                             <button class="calib-tab" onclick="calibApp.switchSection('atomizadora', this)">Atomizadora</button>
-                            <button class="calib-tab" onclick="calibApp.switchSection('barral', this)">Cultivos Bajos/ Aguilón</button>
+                            <button class="calib-tab" onclick="calibApp.switchSection('barral', this)">Barral / Cultivos Bajos</button>
                             <button class="calib-tab active" onclick="calibApp.switchSection('tutorial', this)">Tutorial de Medición</button>
                         </div>
 
@@ -1981,11 +2118,27 @@
                         html += `
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Tiempo (horas)</label>
+                                    <label class="form-label">Tiempo de aplicación (hs)</label>
                                     <input type="number" id="laborTiempo" class="form-input" placeholder="Ej: 8" step="0.5">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Jornales</label>
+                                    <label class="form-label">Volúmen Caldo / ha (L)</label>
+                                    <input type="number" id="laborVolumenCaldo" class="form-input" placeholder="Ej: 400" step="1">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Maquinaria utilizada</label>
+                                    <input type="text" id="laborMaquinaria" class="form-input" placeholder="Ej: Bomba centrífuga">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Lts. combustible</label>
+                                    <input type="number" id="laborCombustible" class="form-input" placeholder="Ej: 20" step="0.5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Número Jornales / Operarios</label>
                                     <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
                                 </div>
                             </div>
@@ -1994,8 +2147,22 @@
 
                     case 'aplicaciones':
                         html += `
-                                                        <div class="form-group">
-                                <label class="form-label">Productos Utilizados</label>
+                            <div class="form-group">
+                                <label class="form-label">Plaga / Enfermedad objetivo</label>
+                                <input type="text" id="laborPlagaEnfermedad" class="form-input" placeholder="Ej: Oidio, Trips, Polilla">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Principio Activo</label>
+                                    <input type="text" id="laborPrincipioActivo" class="form-input" placeholder="Ej: Tebuconazole">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tiempo de carencia (días)</label>
+                                    <input type="number" id="laborCarencia" class="form-input" placeholder="Ej: 15" step="1" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Productos Utilizados (Nombre Comercial)</label>
                                 <input type="text" class="search-box" placeholder="🔍 Buscar productos..." oninput="app.searchProducts('aplicacion', this.value)">
                                 <div class="multi-select-container" id="productosAplicacionContainer">
                                     ${CONFIG.productosAplicacion.map(p => `
@@ -2004,21 +2171,41 @@
                                             <label for="prod_${p.replace(/\s+/g, '_')}">${p}</label>
                                         </div>
                                         <div id="dosis_prod_${p.replace(/\s+/g, '_')}" style="display:none;" class="dosis-input-group">
-                                            <input type="text" placeholder="Dosis (opcional)" class="dosis-input" data-producto="${p}">
+                                            <input type="text" placeholder="Dosis g/ml/kg/ha/100 Lts. agua (opcional)" class="dosis-input" data-producto="${p}">
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Volúmen Caldo / ha (L)</label>
+                                    <input type="number" id="laborVolumenCaldo" class="form-input" placeholder="Ej: 400" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Maquinaria utilizada</label>
+                                    <input type="text" id="laborMaquinaria" class="form-input" placeholder="Ej: Atomizadora">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Tiempo aplicación (hs)</label>
+                                    <input type="number" id="laborTiempo" class="form-input" placeholder="Ej: 4" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Lts. combustible</label>
+                                    <input type="number" id="laborCombustible" class="form-input" placeholder="Ej: 15" step="0.5">
+                                </div>
+                            </div>
                             <div class="form-group">
-                                <label class="form-label">Jornales</label>
-                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 3" step="0.5">
+                                <label class="form-label">Número Jornales / Operarios</label>
+                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
                             </div>
                         `;
                         break;
 
                     case 'fertilizacion':
                         html += `
-                                                        <div class="form-group">
+                            <div class="form-group">
                                 <label class="form-label">Productos Utilizados</label>
                                 <input type="text" class="search-box" placeholder="🔍 Buscar productos..." oninput="app.searchProducts('fertilizacion', this.value)">
                                 <div class="multi-select-container" id="productosFertilizacionContainer">
@@ -2033,9 +2220,29 @@
                                     `).join('')}
                                 </div>
                             </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Volúmen Caldo / ha (L)</label>
+                                    <input type="number" id="laborVolumenCaldo" class="form-input" placeholder="Ej: 200" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Maquinaria utilizada</label>
+                                    <input type="text" id="laborMaquinaria" class="form-input" placeholder="Ej: Fertirrigación">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Tiempo aplicación (hs)</label>
+                                    <input type="number" id="laborTiempo" class="form-input" placeholder="Ej: 2" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Lts. combustible</label>
+                                    <input type="number" id="laborCombustible" class="form-input" placeholder="Ej: 5" step="0.5">
+                                </div>
+                            </div>
                             <div class="form-group">
-                                <label class="form-label">Jornales</label>
-                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 3" step="0.5">
+                                <label class="form-label">Número Jornales / Operarios</label>
+                                <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
                             </div>
                         `;
                         break;
@@ -2044,15 +2251,35 @@
                         html += `
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Equipo Utilizado</label>
+                                    <label class="form-label">Labor / Tarea</label>
+                                    <input type="text" id="laborNombre" class="form-input" placeholder="Ej: Desmalezado, Poda, Raleo">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Implemento / Maquinaria</label>
                                     <select id="laborEquipo" class="form-input">
-                                        <option value="">-- Seleccione equipo --</option>
+                                        <option value="">-- Seleccione --</option>
                                         ${CONFIG.equiposLabranza.map(e => `<option value="${e}">${e}</option>`).join('')}
                                     </select>
                                 </div>
+                            </div>
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Jornales</label>
-                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
+                                    <label class="form-label">Cantidad</label>
+                                    <input type="text" id="laborCantidad" class="form-input" placeholder="Ej: 3 ha, 500 plantas">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Número Jornales / Operarios</label>
+                                    <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 4" step="0.5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Hora inicio</label>
+                                    <input type="time" id="laborHoraInicio" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Hora término</label>
+                                    <input type="time" id="laborHoraTermino" class="form-input">
                                 </div>
                             </div>
                         `;
@@ -2062,12 +2289,127 @@
                         html += `
                             <div class="form-row">
                                 <div class="form-group">
+                                    <label class="form-label">Fecha Inicio</label>
+                                    <input type="date" id="laborFechaInicio" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha Fin</label>
+                                    <input type="date" id="laborFechaFin" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Pasadas Cosecha Nº</label>
+                                    <input type="number" id="laborPasadas" class="form-input" placeholder="Ej: 2" step="1" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Unidad de cosecha</label>
+                                    <select id="laborUnidadCosecha" class="form-input">
+                                        <option value="">-- Seleccione --</option>
+                                        <option value="tachos">Tachos</option>
+                                        <option value="fichas">Fichas</option>
+                                        <option value="cajas">Cajas</option>
+                                        <option value="bing">Bing</option>
+                                        <option value="kg">Kg cosechados</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
                                     <label class="form-label">Kg Cosechados</label>
                                     <input type="number" id="laborKgCosechados" class="form-input" placeholder="Ej: 5000" step="1">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Jornales</label>
+                                    <label class="form-label">Jornales permanentes</label>
+                                    <input type="number" id="laborJornalesPerm" class="form-input" placeholder="Ej: 3" step="0.5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Jornales temporarios</label>
                                     <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 10" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Responsable de Cosecha</label>
+                                    <input type="text" id="laborResponsable" class="form-input" placeholder="Nombre del responsable">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Identificación / Transporte</label>
+                                    <input type="text" id="laborTransporte" class="form-input" placeholder="Patente, empresa, etc.">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight:700;color:var(--primary);margin-top:0.5rem;">Destino Frutas / Hortalizas</label>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Galpón</label>
+                                    <input type="text" id="laborGalpon" class="form-input" placeholder="Nombre del galpón">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Industria</label>
+                                    <input type="text" id="laborIndustria" class="form-input" placeholder="Nombre industria">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Mercado Interno</label>
+                                    <input type="text" id="laborMercado" class="form-input" placeholder="Destino mercado">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight:700;color:var(--primary);">Destino Vid</label>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Nº CIU</label>
+                                    <input type="text" id="laborCIU" class="form-input" placeholder="Número CIU">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tipo de cosecha</label>
+                                    <select id="laborTipoCosecha" class="form-input">
+                                        <option value="">-- Seleccione --</option>
+                                        <option value="manual">Manual</option>
+                                        <option value="mecanica">Mecánica</option>
+                                        <option value="mixta">Mixta</option>
+                                    </select>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'esterilizacion':
+                        html += `
+                            <div class="form-group">
+                                <label class="form-label">Motivo de la esterilización</label>
+                                <input type="text" id="laborMotivo" class="form-input" placeholder="Ej: Prevención de enfermedades del suelo, Desinfección pre-transplante">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Método de esterilización</label>
+                                    <select id="laborMetodo" class="form-input">
+                                        <option value="">-- Seleccione --</option>
+                                        <option value="vapor">Vapor de agua</option>
+                                        <option value="solarizacion">Solarización</option>
+                                        <option value="quimico">Químico (fumigación)</option>
+                                        <option value="biosolarizacion">Biosolarización</option>
+                                        <option value="termico">Tratamiento térmico</option>
+                                        <option value="otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Producto utilizado</label>
+                                    <input type="text" id="laborProductoEsteril" class="form-input" placeholder="Ej: Metam sodio, Cloropicrina">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Dosis</label>
+                                    <input type="text" id="laborDosisEsteril" class="form-input" placeholder="Ej: 50 L/ha, 300 kg/ha">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nombre del responsable</label>
+                                    <input type="text" id="laborResponsable" class="form-input" placeholder="Nombre completo">
                                 </div>
                             </div>
                         `;
@@ -2440,50 +2782,74 @@
 
                 // Add specific fields based on tipo
                 const jornales = document.getElementById('laborJornales');
-                if (jornales) {
-                    labor.jornales = parseFloat(jornales.value) || 0;
-                }
+                if (jornales) labor.jornales = parseFloat(jornales.value) || 0;
+                const maquinaria = document.getElementById('laborMaquinaria');
+                if (maquinaria) labor.maquinaria = maquinaria.value.trim();
+                const combustible = document.getElementById('laborCombustible');
+                if (combustible) labor.combustible = parseFloat(combustible.value) || 0;
+                const tiempo = document.getElementById('laborTiempo');
+                if (tiempo) labor.tiempo = parseFloat(tiempo.value) || 0;
+                const volumenCaldo = document.getElementById('laborVolumenCaldo');
+                if (volumenCaldo) labor.volumenCaldo = parseFloat(volumenCaldo.value) || 0;
 
                 switch(tipo) {
                     case 'riego':
-                        labor.tiempo = parseFloat(document.getElementById('laborTiempo').value) || 0;
                         break;
 
                     case 'aplicaciones':
                     case 'fertilizacion':
                         const prefix = tipo === 'aplicaciones' ? 'prod' : 'fert';
                         const checkboxes = document.querySelectorAll(`#${tipo === 'aplicaciones' ? 'productosAplicacionContainer' : 'productosFertilizacionContainer'} input[type="checkbox"]:checked`);
-                        
                         labor.productos = [];
                         checkboxes.forEach(cb => {
                             const productoId = cb.id.replace(`${prefix}_`, '');
                             const dosisInput = document.querySelector(`#dosis_${prefix}_${productoId} .dosis-input`);
-                            labor.productos.push({
-                                nombre: cb.value,
-                                dosis: dosisInput ? dosisInput.value : ''
-                            });
+                            labor.productos.push({ nombre: cb.value, dosis: dosisInput ? dosisInput.value : '' });
                         });
-
                         if (labor.productos.length === 0) {
                             this.showAlert('laborAlert', 'Por favor seleccione al menos un producto');
                             return;
                         }
+                        if (tipo === 'aplicaciones') {
+                            const pa = document.getElementById('laborPlagaEnfermedad');
+                            if (pa) labor.plagaEnfermedad = pa.value.trim();
+                            const pia = document.getElementById('laborPrincipioActivo');
+                            if (pia) labor.principioActivo = pia.value.trim();
+                            const car = document.getElementById('laborCarencia');
+                            if (car) labor.carencia = parseInt(car.value) || 0;
+                        }
                         break;
 
                     case 'labranzas':
-                        labor.equipo = document.getElementById('laborEquipo').value;
-                        if (!labor.equipo) {
-                            this.showAlert('laborAlert', 'Por favor seleccione un equipo');
-                            return;
-                        }
+                        labor.equipo = (document.getElementById('laborEquipo')?.value) || '';
+                        labor.laborNombre = (document.getElementById('laborNombre')?.value.trim()) || '';
+                        labor.cantidad = (document.getElementById('laborCantidad')?.value.trim()) || '';
+                        labor.horaInicio = (document.getElementById('laborHoraInicio')?.value) || '';
+                        labor.horaTermino = (document.getElementById('laborHoraTermino')?.value) || '';
                         break;
 
                     case 'cosecha':
-                        labor.kgCosechados = parseFloat(document.getElementById('laborKgCosechados').value) || 0;
-                        if (labor.kgCosechados === 0) {
-                            this.showAlert('laborAlert', 'Por favor ingrese los kg cosechados');
-                            return;
-                        }
+                        labor.kgCosechados = parseFloat(document.getElementById('laborKgCosechados')?.value) || 0;
+                        labor.pasadas = parseInt(document.getElementById('laborPasadas')?.value) || 0;
+                        labor.unidadCosecha = document.getElementById('laborUnidadCosecha')?.value || '';
+                        labor.jornalesPerm = parseFloat(document.getElementById('laborJornalesPerm')?.value) || 0;
+                        labor.responsable = document.getElementById('laborResponsable')?.value.trim() || '';
+                        labor.transporte = document.getElementById('laborTransporte')?.value.trim() || '';
+                        labor.galpon = document.getElementById('laborGalpon')?.value.trim() || '';
+                        labor.industria = document.getElementById('laborIndustria')?.value.trim() || '';
+                        labor.mercado = document.getElementById('laborMercado')?.value.trim() || '';
+                        labor.ciu = document.getElementById('laborCIU')?.value.trim() || '';
+                        labor.tipoCosecha = document.getElementById('laborTipoCosecha')?.value || '';
+                        labor.fechaInicio = document.getElementById('laborFechaInicio')?.value || '';
+                        labor.fechaFin = document.getElementById('laborFechaFin')?.value || '';
+                        break;
+
+                    case 'esterilizacion':
+                        labor.motivo = document.getElementById('laborMotivo')?.value.trim() || '';
+                        labor.metodo = document.getElementById('laborMetodo')?.value || '';
+                        labor.productoEsteril = document.getElementById('laborProductoEsteril')?.value.trim() || '';
+                        labor.dosisEsteril = document.getElementById('laborDosisEsteril')?.value.trim() || '';
+                        labor.responsable = document.getElementById('laborResponsable')?.value.trim() || '';
                         break;
                 }
 
@@ -2800,9 +3166,27 @@
         // ================================================================
         // STOCK APP
         // ================================================================
+        const AGRO_CATS = ['fungicida','insecticida','herbicida','acaricida','fitorregulador','coadyuvante','otro_agro'];
+        const FERT_CATS = ['fertilizante_solido','fertilizante_liquido','enmienda','bioestimulante','otro_fert','fertilizante'];
+
         const stockApp = {
             productos: [],
             editingId: null,
+            currentCategoria: 'agroquimicos',
+
+            onCategoriaChange() {
+                // auto-select the right subtab when adding product
+                const cat = document.getElementById('stockCategoria').value;
+                // no UI action needed here
+            },
+
+            switchCategoria(cat, btn) {
+                this.currentCategoria = cat;
+                document.querySelectorAll('#stockTabAgro, #stockTabFert').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('stockSummaryAgro').style.display = cat === 'agroquimicos' ? '' : 'none';
+                document.getElementById('stockSummaryFert').style.display = cat === 'fertilizantes' ? '' : 'none';
+            },
 
             async init() {
                 await this.cargarProductos();
@@ -2814,11 +3198,8 @@
                 if (!userId) return;
                 if (sb) {
                     const { data, error } = await sb.from('stock_productos').select('*').eq('user_id', userId).order('nombre');
-                    if (!error && data) {
-                        this.productos = data;
-                    } else {
-                        this.productos = this._loadLocal();
-                    }
+                    if (!error && data) { this.productos = data; }
+                    else { this.productos = this._loadLocal(); }
                 } else {
                     this.productos = this._loadLocal();
                 }
@@ -2838,25 +3219,18 @@
                 document.getElementById(id).classList.add('open');
                 if (id === 'modalAgregarProducto') {
                     this.editingId = null;
-                    document.getElementById('stockNombre').value = '';
+                    ['stockNombre','stockCantidad','stockMinimo','stockVencimiento','stockObservaciones'].forEach(f => { const el = document.getElementById(f); if(el) el.value = ''; });
                     document.getElementById('stockCategoria').value = 'fungicida';
-                    document.getElementById('stockCantidad').value = '';
                     document.getElementById('stockUnidad').value = 'L';
-                    document.getElementById('stockMinimo').value = '';
-                    document.getElementById('stockVencimiento').value = '';
-                    document.getElementById('stockObservaciones').value = '';
                     document.getElementById('stockFormAlert').innerHTML = '';
                 }
                 if (id === 'modalMovimiento') {
-                    const today = new Date().toISOString().split('T')[0];
-                    document.getElementById('movFecha').value = today;
+                    document.getElementById('movFecha').value = new Date().toISOString().split('T')[0];
                     document.getElementById('movCantidad').value = '';
                     document.getElementById('movMotivo').value = '';
                 }
             },
-            closeModal(id) {
-                document.getElementById(id).classList.remove('open');
-            },
+            closeModal(id) { document.getElementById(id).classList.remove('open'); },
 
             async guardarProducto() {
                 const nombre = document.getElementById('stockNombre').value.trim();
@@ -2876,9 +3250,7 @@
                     id: 'prod_' + Date.now(),
                     user_id: app.currentUser.rut,
                     nombre, categoria, cantidad, unidad,
-                    stock_minimo: minimo,
-                    vencimiento,
-                    observaciones,
+                    stock_minimo: minimo, vencimiento, observaciones,
                     movimientos: [{ tipo: 'entrada', cantidad, fecha: new Date().toISOString().split('T')[0], motivo: 'Stock inicial' }],
                     created_at: new Date().toISOString()
                 };
@@ -2890,21 +3262,18 @@
                         cantidad, unidad, stock_minimo: minimo, vencimiento, observaciones,
                         movimientos: producto.movimientos
                     }]).select();
-                    if (error) {
-                        // fallback to local
-                        this.productos.push(producto);
-                        this._saveLocal();
-                    } else {
-                        this.productos.push(data[0] || producto);
-                    }
+                    this.productos.push((!error && data) ? (data[0] || producto) : producto);
                 } else {
                     this.productos.push(producto);
-                    this._saveLocal();
                 }
-
+                this._saveLocal();
                 this.closeModal('modalAgregarProducto');
                 this.renderTabla();
                 this.renderStats();
+                // auto-switch to correct sub-tab
+                const isAgro = AGRO_CATS.includes(categoria);
+                const targetBtn = document.getElementById(isAgro ? 'stockTabAgro' : 'stockTabFert');
+                this.switchCategoria(isAgro ? 'agroquimicos' : 'fertilizantes', targetBtn);
                 app.showNotification('✓ Producto agregado al stock');
             },
 
@@ -2926,28 +3295,19 @@
                 const motivo = document.getElementById('movMotivo').value.trim();
 
                 if (!cant || cant <= 0) { alert('Ingrese una cantidad válida.'); return; }
-
                 const idx = this.productos.findIndex(x => x.id === productoId);
                 if (idx === -1) return;
                 const p = this.productos[idx];
-
                 if (tipo === 'salida' && cant > p.cantidad) {
-                    alert('No hay suficiente stock. Stock actual: ' + p.cantidad + ' ' + p.unidad);
-                    return;
+                    alert('No hay suficiente stock. Stock actual: ' + p.cantidad + ' ' + p.unidad); return;
                 }
-
                 const nuevaCantidad = tipo === 'entrada' ? p.cantidad + cant : p.cantidad - cant;
-                const movimiento = { tipo, cantidad: cant, fecha, motivo };
-                const movs = [...(p.movimientos || []), movimiento];
-
+                const movs = [...(p.movimientos || []), { tipo, cantidad: cant, fecha, motivo }];
                 const sb = getSupabase();
-                if (sb) {
-                    await sb.from('stock_productos').update({ cantidad: nuevaCantidad, movimientos: movs }).eq('id', productoId);
-                }
+                if (sb) await sb.from('stock_productos').update({ cantidad: nuevaCantidad, movimientos: movs }).eq('id', productoId);
                 this.productos[idx].cantidad = nuevaCantidad;
                 this.productos[idx].movimientos = movs;
                 this._saveLocal();
-
                 this.closeModal('modalMovimiento');
                 this.renderTabla();
                 this.renderStats();
@@ -2960,17 +3320,14 @@
                 const movs = (p.movimientos || []).slice().reverse();
                 let html = movs.length ? '' : '<p style="text-align:center;color:#999;padding:2rem;">Sin movimientos registrados.</p>';
                 movs.forEach(m => {
-                    html += `<div class="historial-item">
-                        <span>${m.fecha} — ${m.motivo || 'Sin detalle'}</span>
-                        <span class="historial-${m.tipo}">${m.tipo === 'entrada' ? '+' : '-'}${m.cantidad} ${p.unidad}</span>
-                    </div>`;
+                    html += `<div class="historial-item"><span>${m.fecha} — ${m.motivo || 'Sin detalle'}</span><span class="historial-${m.tipo}">${m.tipo === 'entrada' ? '+' : '-'}${m.cantidad} ${p.unidad}</span></div>`;
                 });
                 document.getElementById('historialContent').innerHTML = `<h4 style="margin-bottom:1rem;color:var(--primary);">${p.nombre}</h4>` + html;
                 this.openModal('modalHistorial');
             },
 
             async eliminarProducto(productoId) {
-                if (!confirm('¿Eliminar este producto del stock? Esta acción no se puede deshacer.')) return;
+                if (!confirm('¿Eliminar este producto del stock?')) return;
                 const sb = getSupabase();
                 if (sb) await sb.from('stock_productos').delete().eq('id', productoId);
                 this.productos = this.productos.filter(x => x.id !== productoId);
@@ -2980,90 +3337,72 @@
                 app.showNotification('✓ Producto eliminado');
             },
 
-            renderTabla() {
-                const tbody = document.getElementById('stockTableBody');
-                if (!this.productos.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">No hay productos en stock. Haga clic en "Agregar Producto" para comenzar.</td></tr>';
+            _renderRows(lista, tbodyId) {
+                const tbody = document.getElementById(tbodyId);
+                if (!tbody) return;
+                if (!lista.length) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:3rem;color:#999;">No hay productos registrados en esta categoría.</td></tr>`;
                     return;
                 }
-                const today = new Date();
-                const in30 = new Date(); in30.setDate(today.getDate() + 30);
-                tbody.innerHTML = this.productos.map(p => {
+                const today = new Date(); const in30 = new Date(); in30.setDate(today.getDate() + 30);
+                tbody.innerHTML = lista.map(p => {
                     const isLow = p.stock_minimo > 0 && p.cantidad <= p.stock_minimo;
                     const venc = p.vencimiento ? new Date(p.vencimiento) : null;
-                    const isVenc = venc && venc <= in30;
-                    let vencText = p.vencimiento ? p.vencimiento : '—';
-                    if (isVenc && venc > today) vencText = `<span style="color:#c07600;font-weight:700;">⚠️ ${p.vencimiento}</span>`;
+                    let vencText = p.vencimiento || '—';
                     if (venc && venc < today) vencText = `<span style="color:var(--danger);font-weight:700;">❌ ${p.vencimiento}</span>`;
+                    else if (venc && venc <= in30) vencText = `<span style="color:#c07600;font-weight:700;">⚠️ ${p.vencimiento}</span>`;
                     return `<tr>
-                        <td>
-                            <div style="font-weight:600;">${p.nombre}</div>
-                            <div style="font-size:0.8rem;color:#999;">${p.observaciones || ''}</div>
-                        </td>
-                        <td><span class="stock-badge stock-badge-${p.categoria}">${p.categoria}</span></td>
-                        <td><span class="stock-qty ${isLow ? 'low' : ''}">${p.cantidad} ${p.unidad}</span>${isLow ? ' <span style="color:var(--danger);font-size:0.75rem;">▼ bajo mín.</span>' : ''}</td>
+                        <td><div style="font-weight:600;">${p.nombre}</div><div style="font-size:0.8rem;color:#999;">${p.observaciones || ''}</div></td>
+                        <td><span class="stock-badge stock-badge-${p.categoria}">${p.categoria.replace('_',' ')}</span></td>
+                        <td><span class="stock-qty ${isLow ? 'low' : ''}">${p.cantidad} ${p.unidad}</span>${isLow ? ' <span style="color:var(--danger);font-size:0.75rem;">▼</span>' : ''}</td>
                         <td>${p.stock_minimo ? p.stock_minimo + ' ' + p.unidad : '—'}</td>
                         <td>${vencText}</td>
                         <td style="white-space:nowrap;">
-                            <button class="btn-mov btn-entrada" onclick="stockApp.abrirMovimiento('${p.id}','entrada')">+Entrada</button>
-                            <button class="btn-mov btn-salida" onclick="stockApp.abrirMovimiento('${p.id}','salida')">−Salida</button>
+                            <button class="btn-mov btn-entrada" onclick="stockApp.abrirMovimiento('${p.id}','entrada')">+</button>
+                            <button class="btn-mov btn-salida" onclick="stockApp.abrirMovimiento('${p.id}','salida')">−</button>
                             <button class="btn-mov" onclick="stockApp.verHistorial('${p.id}')" style="background:#f0f0f0;border:1px solid #ccc;color:#555;">📋</button>
-                            <button class="btn-mov btn-salida" onclick="stockApp.eliminarProducto('${p.id}')" style="margin-left:0.25rem;">🗑</button>
+                            <button class="btn-mov btn-salida" onclick="stockApp.eliminarProducto('${p.id}')">🗑</button>
                         </td>
                     </tr>`;
                 }).join('');
             },
 
+            renderTabla() {
+                const agros = this.productos.filter(p => AGRO_CATS.includes(p.categoria));
+                const ferts = this.productos.filter(p => FERT_CATS.includes(p.categoria));
+                this._renderRows(agros, 'stockTableBodyAgro');
+                this._renderRows(ferts, 'stockTableBodyFert');
+            },
+
             renderStats() {
-                const today = new Date();
-                const in30 = new Date(); in30.setDate(today.getDate() + 30);
-                document.getElementById('statTotal').textContent = this.productos.length;
-                document.getElementById('statBajos').textContent = this.productos.filter(p => p.stock_minimo > 0 && p.cantidad <= p.stock_minimo).length;
-                document.getElementById('statVencidos').textContent = this.productos.filter(p => p.vencimiento && new Date(p.vencimiento) <= in30).length;
+                const today = new Date(); const in30 = new Date(); in30.setDate(today.getDate() + 30);
+                const agros = this.productos.filter(p => AGRO_CATS.includes(p.categoria));
+                const ferts = this.productos.filter(p => FERT_CATS.includes(p.categoria));
+                const stats = (list, prefix) => {
+                    document.getElementById('statTotal' + prefix).textContent = list.length;
+                    document.getElementById('statBajos' + prefix).textContent = list.filter(p => p.stock_minimo > 0 && p.cantidad <= p.stock_minimo).length;
+                    document.getElementById('statVencidos' + prefix).textContent = list.filter(p => p.vencimiento && new Date(p.vencimiento) <= in30).length;
+                };
+                stats(agros, 'Agro'); stats(ferts, 'Fert');
             },
 
             imprimirStock() {
                 const today = new Date().toLocaleDateString('es-AR');
-                const rows = this.productos.map(p => `
-                    <tr>
-                        <td>${p.nombre}</td>
-                        <td>${p.categoria}</td>
-                        <td><strong>${p.cantidad} ${p.unidad}</strong></td>
-                        <td>${p.stock_minimo ? p.stock_minimo + ' ' + p.unidad : '—'}</td>
-                        <td>${p.vencimiento || '—'}</td>
-                        <td>${p.observaciones || '—'}</td>
-                    </tr>`).join('');
+                const agros = this.productos.filter(p => AGRO_CATS.includes(p.categoria));
+                const ferts = this.productos.filter(p => FERT_CATS.includes(p.categoria));
+                const makeRows = list => list.map(p => `<tr><td>${p.nombre}</td><td>${p.categoria.replace('_',' ')}</td><td><strong>${p.cantidad} ${p.unidad}</strong></td><td>${p.stock_minimo ? p.stock_minimo + ' ' + p.unidad : '—'}</td><td>${p.vencimiento || '—'}</td><td>${p.observaciones || '—'}</td></tr>`).join('');
+                const tableHTML = (title, list) => `<h3 style="color:#2d5016;margin:1.5rem 0 0.75rem;">${title}</h3><table style="width:100%;border-collapse:collapse;font-size:0.88rem;margin-bottom:1rem;"><thead><tr style="background:#2d5016;color:white;">${['Producto','Categoría','Stock Actual','Stock Mín.','Vencimiento','Observaciones'].map(h=>`<th style="padding:8px;text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${makeRows(list)}</tbody></table>`;
                 const printArea = document.getElementById('printArea');
                 printArea.style.display = 'block';
-                printArea.innerHTML = `
-                    <div style="font-family:Arial,sans-serif;padding:20px;max-width:900px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #2d5016;padding-bottom:12px;margin-bottom:20px;">
-                            <div>
-                                <h1 style="color:#2d5016;margin:0;font-size:1.6rem;">Cuaderno de Campo Digital Mendoza</h1>
-                                <h2 style="margin:4px 0 0;color:#555;font-size:1.1rem;">Stock de Agroquímicos — Remanente</h2>
-                            </div>
-                            <div style="text-align:right;color:#555;font-size:0.9rem;">
-                                <div>Usuario: <strong>${app.currentUser?.name || app.currentUser?.nombre || ''}</strong></div>
-                                <div>Fecha: <strong>${today}</strong></div>
-                            </div>
-                        </div>
-                        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-                            <thead>
-                                <tr style="background:#2d5016;color:white;">
-                                    <th style="padding:10px;text-align:left;">Producto</th>
-                                    <th style="padding:10px;text-align:left;">Categoría</th>
-                                    <th style="padding:10px;text-align:left;">Stock Actual</th>
-                                    <th style="padding:10px;text-align:left;">Stock Mín.</th>
-                                    <th style="padding:10px;text-align:left;">Vencimiento</th>
-                                    <th style="padding:10px;text-align:left;">Observaciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
-                        <div style="margin-top:30px;border-top:1px solid #ccc;padding-top:15px;color:#777;font-size:0.8rem;">
-                            Total de productos: ${this.productos.length} | Documento generado el ${today}
-                        </div>
-                    </div>`;
+                printArea.innerHTML = `<div style="font-family:Arial,sans-serif;padding:20px;max-width:900px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #2d5016;padding-bottom:12px;margin-bottom:16px;">
+                        <div><h1 style="color:#2d5016;margin:0;font-size:1.4rem;">Cuaderno de Campo Digital Mendoza</h1><h2 style="margin:4px 0 0;color:#555;font-size:1rem;">Stock de Insumos — Remanente</h2></div>
+                        <div style="text-align:right;color:#555;font-size:0.85rem;"><div>Usuario: <strong>${app.currentUser?.nombre || app.currentUser?.name || ''}</strong></div><div>Fecha: <strong>${today}</strong></div></div>
+                    </div>
+                    ${tableHTML('Agroquímicos', agros)}
+                    ${tableHTML('Fertilizantes', ferts)}
+                    <div style="margin-top:20px;border-top:1px solid #ccc;padding-top:10px;color:#777;font-size:0.8rem;">Total agroquímicos: ${agros.length} | Total fertilizantes: ${ferts.length} | Generado el ${today}</div>
+                </div>`;
                 window.print();
                 setTimeout(() => { printArea.style.display = 'none'; }, 500);
             }
@@ -3262,19 +3601,129 @@
             }
         };
 
-        // Override switchTab to initialize stock when needed
-        const _origSwitchTab = app.switchTab.bind(app);
-        app.switchTab = function(tabName) {
-            _origSwitchTab(tabName);
-            if (tabName === 'stock') {
-                stockApp.init();
+        // ================================================================
+        // MONITOREO APP
+        // ================================================================
+        const monitoreoApp = {
+            registros: [],
+
+            _key() { return 'monitoreo_' + (app.currentUser?.rut || ''); },
+            _load() { const r = localStorage.getItem(this._key()); return r ? JSON.parse(r) : []; },
+            _save() { localStorage.setItem(this._key(), JSON.stringify(this.registros)); },
+
+            init() {
+                this.registros = this._load();
+                this.poblarCuarteles('monCuartel');
+                this.poblarCuarteles('monFiltroCuartel', true);
+                this.renderTabla(this.registros);
+            },
+
+            poblarCuarteles(selectId, withAll = false) {
+                const sel = document.getElementById(selectId);
+                if (!sel) return;
+                const cuarteles = (DB.cuarteles?.cuarteles || []).filter(c => c.userId === app.currentUser?.rut);
+                const opts = cuarteles.map(c => {
+                    const finca = (DB.fincas?.fincas || []).find(f => f.id === c.fincaId);
+                    return `<option value="${c.id}">${finca ? finca.nombre + ' / ' : ''}${c.nombre}</option>`;
+                }).join('');
+                sel.innerHTML = (withAll ? '<option value="">Todos los cuarteles</option>' : '<option value="">-- Seleccione cuartel --</option>') + opts;
+            },
+
+            mostrarFormulario() {
+                document.getElementById('monitoreoForm').style.display = '';
+                document.getElementById('monFecha').value = new Date().toISOString().split('T')[0];
+                ['monCuartel','monPlaga','monPuntoMuestreo','monHilera','monPlanta','monObservaciones'].forEach(id => {
+                    const el = document.getElementById(id); if(el && el.tagName !== 'SELECT') el.value = '';
+                });
+                document.getElementById('monNivel').value = '';
+                document.getElementById('monitoreoAlert').innerHTML = '';
+                this.poblarCuarteles('monCuartel');
+            },
+            ocultarFormulario() { document.getElementById('monitoreoForm').style.display = 'none'; },
+
+            guardar() {
+                const fecha = document.getElementById('monFecha').value;
+                const cuartelId = document.getElementById('monCuartel').value;
+                const plaga = document.getElementById('monPlaga').value.trim();
+                if (!fecha || !cuartelId || !plaga) {
+                    document.getElementById('monitoreoAlert').innerHTML = '<div class="alert alert-danger">Complete Fecha, Cuartel y Plaga/Enfermedad.</div>';
+                    return;
+                }
+                const reg = {
+                    id: 'mon_' + Date.now(),
+                    userId: app.currentUser.rut,
+                    fecha,
+                    cuartelId,
+                    plaga,
+                    puntoMuestreo: document.getElementById('monPuntoMuestreo').value.trim(),
+                    hilera: document.getElementById('monHilera').value.trim(),
+                    planta: document.getElementById('monPlanta').value.trim(),
+                    nivel: document.getElementById('monNivel').value,
+                    observaciones: document.getElementById('monObservaciones').value.trim(),
+                    createdAt: new Date().toISOString()
+                };
+                this.registros.push(reg);
+                this._save();
+                this.ocultarFormulario();
+                this.filtrar();
+                app.showNotification('✓ Registro de monitoreo guardado');
+            },
+
+            eliminar(id) {
+                if (!confirm('¿Eliminar este registro de monitoreo?')) return;
+                this.registros = this.registros.filter(r => r.id !== id);
+                this._save();
+                this.filtrar();
+            },
+
+            filtrar() {
+                const cuartelId = document.getElementById('monFiltroCuartel')?.value;
+                const desde = document.getElementById('monFiltroDesde')?.value;
+                const hasta = document.getElementById('monFiltroHasta')?.value;
+                let lista = this.registros.filter(r => r.userId === app.currentUser?.rut);
+                if (cuartelId) lista = lista.filter(r => r.cuartelId === cuartelId);
+                if (desde) lista = lista.filter(r => r.fecha >= desde);
+                if (hasta) lista = lista.filter(r => r.fecha <= hasta);
+                lista.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                this.renderTabla(lista);
+            },
+
+            _nivelBadge(nivel) {
+                const map = { ausente:'#4a7c2a', bajo:'#1a6a9a', medio:'#8b6000', alto:'#c94c4c', critico:'#7b0000' };
+                const color = map[nivel] || '#555';
+                return nivel ? `<span style="background:${color}15;color:${color};padding:0.2rem 0.6rem;border-radius:12px;font-size:0.8rem;font-weight:600;">${nivel}</span>` : '—';
+            },
+
+            renderTabla(lista) {
+                const tbody = document.getElementById('monitoreoTableBody');
+                if (!lista || !lista.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:3rem;color:#999;">No hay registros de monitoreo.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = lista.map(r => {
+                    const cuartel = (DB.cuarteles?.cuarteles || []).find(c => c.id === r.cuartelId);
+                    const finca = cuartel ? (DB.fincas?.fincas || []).find(f => f.id === cuartel.fincaId) : null;
+                    const cuartelLabel = (finca ? finca.nombre + ' / ' : '') + (cuartel ? cuartel.nombre : 'N/A');
+                    return `<tr>
+                        <td>${new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-AR')}</td>
+                        <td>${cuartelLabel}</td>
+                        <td style="font-weight:600;">${r.plaga}</td>
+                        <td>${r.puntoMuestreo || '—'}</td>
+                        <td>${[r.hilera, r.planta].filter(Boolean).join(' / ') || '—'}</td>
+                        <td>${this._nivelBadge(r.nivel)}</td>
+                        <td style="max-width:180px;font-size:0.88rem;">${r.observaciones || '—'}</td>
+                        <td><button class="btn-small btn-delete" onclick="monitoreoApp.eliminar('${r.id}')">Eliminar</button></td>
+                    </tr>`;
+                }).join('');
             }
         };
 
-        // Also init stock when main app shows
-        const _origShowMainApp = app.showMainApp.bind(app);
-        app.showMainApp = function() {
-            _origShowMainApp();
+        // Override switchTab to initialize stock and monitoreo when needed
+        const _origSwitchTab = app.switchTab.bind(app);
+        app.switchTab = function(tabName) {
+            _origSwitchTab(tabName);
+            if (tabName === 'stock') stockApp.init();
+            if (tabName === 'monitoreo') monitoreoApp.init();
         };
     </script>
 </body>
