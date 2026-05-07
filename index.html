@@ -1147,7 +1147,7 @@
                     <div id="loginAlert"></div>
                     <div class="form-group">
                         <label class="form-label">Usuario</label>
-                        <input type="text" id="loginRut" class="form-input" placeholder="Ej: 20-12345678-9" maxlength="13">
+                        <input type="text" id="loginRut" class="form-input" placeholder="Ej: Juan Pérez" maxlength="20">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Contraseña</label>
@@ -2418,11 +2418,7 @@
                 dosisDiv.style.display = checkbox.checked ? 'flex' : 'none';
             },
 
-            validateRut(rut) {
-                const rutRegex = /^\d{2}-\d{7,8}-\d{1}$/;
-                return rutRegex.test(rut);
-            },
-
+           
             showAlert(elementId, message, type = 'danger') {
                 const alertDiv = document.getElementById(elementId);
                 alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
@@ -2467,11 +2463,6 @@
                     return;
                 }
 
-                if (!this.validateRut(rut)) {
-                    this.showAlert('registerAlert', 'El formato del RUT no es válido (XX-XXXXXXXX-X)');
-                    return;
-                }
-
                 if (password.length < 6) {
                     this.showAlert('registerAlert', 'La contraseña debe tener al menos 6 caracteres');
                     return;
@@ -2484,7 +2475,7 @@
 
                 const existingUser = DB.usuarios.users.find(u => u.rut === rut);
                 if (existingUser) {
-                    this.showAlert('registerAlert', 'Ya existe un usuario registrado con este RUT', 'info');
+                    this.showAlert('registerAlert', 'Ya existe un usuario registrado con este Usuario', 'info');
                     return;
                 }
 
