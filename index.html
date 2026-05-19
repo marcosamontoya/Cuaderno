@@ -7,6 +7,163 @@
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+    // SupabaseService — basado en supabase-service.js con extensiones para stock y monitoreo
+    class SupabaseService {
+        constructor(url, key) {
+            this.supabase = supabase.createClient(url, key);
+        }
+
+        // USUARIOS
+        async registerUser(rut, nombre, password, email = '', rut_dni = '') {
+            try {
+                const { data, error } = await this.supabase
+                    .from('usuarios').insert([{ rut, nombre, password, email, rut_dni }]).select();
+                if (error) throw error;
+                return { success: true, data: data[0] };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async loginUser(rut, password) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('usuarios').select('*').eq('rut', rut).eq('password', password).single();
+                if (error) throw error;
+                return { success: true, data };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async checkUserExists(rut) {
+            try {
+                const { data } = await this.supabase.from('usuarios').select('rut').eq('rut', rut).single();
+                return data !== null;
+            } catch(e) { return false; }
+        }
+
+        // FINCAS
+        async getFincas(userId) {
+            try {
+                const { data, error } = await this.supabase.from('fincas')
+                    .select('*').eq('user_id', userId).order('created_at', { ascending: false });
+                if (error) throw error;
+                return { success: true, data };
+            } catch(e) { return { success: false, error: e.message, data: [] }; }
+        }
+        async addFinca(finca) {
+            try {
+                const { data, error } = await this.supabase.from('fincas').insert([finca]).select();
+                if (error) throw error;
+                return { success: true, data: data[0] };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async deleteFinca(id) {
+            try {
+                const { error } = await this.supabase.from('fincas').delete().eq('id', id);
+                if (error) throw error;
+                return { success: true };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+
+        // CUARTELES
+        async getCuarteles(userId) {
+            try {
+                const { data, error } = await this.supabase.from('cuarteles')
+                    .select('*').eq('user_id', userId).order('created_at', { ascending: false });
+                if (error) throw error;
+                return { success: true, data };
+            } catch(e) { return { success: false, error: e.message, data: [] }; }
+        }
+        async addCuartel(cuartel) {
+            try {
+                const { data, error } = await this.supabase.from('cuarteles').insert([cuartel]).select();
+                if (error) throw error;
+                return { success: true, data: data[0] };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async deleteCuartel(id) {
+            try {
+                const { error } = await this.supabase.from('cuarteles').delete().eq('id', id);
+                if (error) throw error;
+                return { success: true };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+
+        // LABORES
+        async getLabores(userId, filters = {}) {
+            try {
+                let q = this.supabase.from('labores').select('*').eq('user_id', userId);
+                if (filters.tipo)       q = q.eq('tipo', filters.tipo);
+                if (filters.cuartelId)  q = q.eq('cuartel_id', filters.cuartelId);
+                if (filters.fechaDesde) q = q.gte('fecha', filters.fechaDesde);
+                if (filters.fechaHasta) q = q.lte('fecha', filters.fechaHasta);
+                const { data, error } = await q.order('fecha', { ascending: false });
+                if (error) throw error;
+                return { success: true, data };
+            } catch(e) { return { success: false, error: e.message, data: [] }; }
+        }
+        async addLabor(labor) {
+            try {
+                const { data, error } = await this.supabase.from('labores').insert([labor]).select();
+                if (error) throw error;
+                return { success: true, data: data[0] };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async deleteLabor(id) {
+            try {
+                const { error } = await this.supabase.from('labores').delete().eq('id', id);
+                if (error) throw error;
+                return { success: true };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+
+        // STOCK
+        async getStock(userId) {
+            try {
+                const { data, error } = await this.supabase.from('stock_productos')
+                    .select('*').eq('user_id', userId).order('nombre');
+                if (error) throw error;
+                return { success: true, data };
+            } catch(e) { return { success: false, error: e.message, data: [] }; }
+        }
+        async upsertStock(producto) {
+            try {
+                const { data, error } = await this.supabase.from('stock_productos')
+                    .upsert([producto]).select();
+                if (error) throw error;
+                return { success: true, data: data[0] };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async deleteStock(id) {
+            try {
+                const { error } = await this.supabase.from('stock_productos').delete().eq('id', id);
+                if (error) throw error;
+                return { success: true };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+
+        // MONITOREO
+        async getMonitoreo(userId) {
+            try {
+                const { data, error } = await this.supabase.from('monitoreo')
+                    .select('*').eq('user_id', userId).order('fecha', { ascending: false });
+                if (error) throw error;
+                return { success: true, data };
+            } catch(e) { return { success: false, error: e.message, data: [] }; }
+        }
+        async addMonitoreo(reg) {
+            try {
+                const { data, error } = await this.supabase.from('monitoreo').insert([reg]).select();
+                if (error) throw error;
+                return { success: true, data: data[0] };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+        async deleteMonitoreo(id) {
+            try {
+                const { error } = await this.supabase.from('monitoreo').delete().eq('id', id);
+                if (error) throw error;
+                return { success: true };
+            } catch(e) { return { success: false, error: e.message }; }
+        }
+    }
+    </script>
     <style>
         :root {
             --primary: #2d5016;
@@ -1959,63 +2116,102 @@
             }
         }
 
-        // Database Manager
+        // ================================================================
+        // SUPABASE CONFIG
+        // ================================================================
+        const SUPABASE_URL = 'https://ioycrbykhbfxudumrcsi.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_AC7lgoV5Ok4WXXZR3ZoJ3Q_U3OrlYc3';
+
+        // Database Manager — todas las operaciones van a Supabase
         const DB = {
-            usuarios: { users: [] },
-            fincas: { fincas: [] },
+            usuarios:  { users: [] },
+            fincas:    { fincas: [] },
             cuarteles: { cuarteles: [] },
-            labores: { labores: [] },
+            labores:   { labores: [] },
+            _svc: null,
+
+            svc() {
+                if (!this._svc) this._svc = new SupabaseService(SUPABASE_URL, SUPABASE_KEY);
+                return this._svc;
+            },
 
             async loadAll() {
-                const stored = {
-                    usuarios: localStorage.getItem('db_usuarios'),
-                    fincas: localStorage.getItem('db_fincas'),
-                    cuarteles: localStorage.getItem('db_cuarteles'),
-                    labores: localStorage.getItem('db_labores')
-                };
-
-                this.usuarios = stored.usuarios ? JSON.parse(stored.usuarios) : { users: [] };
-                this.fincas = stored.fincas ? JSON.parse(stored.fincas) : { fincas: [] };
-                this.cuarteles = stored.cuarteles ? JSON.parse(stored.cuarteles) : { cuarteles: [] };
-                this.labores = stored.labores ? JSON.parse(stored.labores) : { labores: [] };
+                // Usuarios se cargan en login/register individualmente.
+                // Fincas, cuarteles y labores se recargan tras login (ver showMainApp).
+                this.usuarios  = { users: [] };
+                this.fincas    = { fincas: [] };
+                this.cuarteles = { cuarteles: [] };
+                this.labores   = { labores: [] };
             },
 
-            save(dbName) {
-                localStorage.setItem(`db_${dbName}`, JSON.stringify(this[dbName]));
-                this.saveToFile(dbName);
+            async loadForUser(userId) {
+                const [fRes, cRes, lRes] = await Promise.all([
+                    this.svc().getFincas(userId),
+                    this.svc().getCuarteles(userId),
+                    this.svc().getLabores(userId)
+                ]);
+                this.fincas.fincas       = (fRes.data || []).map(r => ({
+                    id: r.id, userId: r.user_id, nombre: r.nombre,
+                    direccion: r.direccion, superficie: r.superficie, createdAt: r.created_at
+                }));
+                this.cuarteles.cuarteles = (cRes.data || []).map(r => ({
+                    id: r.id, userId: r.user_id, fincaId: r.finca_id,
+                    nombre: r.nombre, superficie: r.superficie,
+                    cultivo: r.cultivo, variedad: r.variedad,
+                    sistemaRiego: r.sistema_riego,
+                    anioImplantacion: r.anio_implantacion,
+                    telaAntigranizo: r.tela_antigranizo,
+                    createdAt: r.created_at
+                }));
+                this.labores.labores = (lRes.data || []).map(r => {
+                    const extra = r.datos ? JSON.parse(r.datos) : {};
+                    return {
+                        id: r.id, userId: r.user_id, cuartelId: r.cuartel_id,
+                        tipo: r.tipo, fecha: r.fecha, observaciones: r.observaciones,
+                        jornales: r.jornales, tiempo: r.tiempo,
+                        productos: r.productos, equipo: r.equipo,
+                        kgCosechados: r.kg_cosechados, createdAt: r.created_at,
+                        ...extra
+                    };
+                });
             },
 
-            saveToFile(dbName) {
-                // Auto-download JSON file to keep external file updated
-                const dataStr = JSON.stringify(this[dbName], null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(dataBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `db_${dbName}.json`;
-                
-                // Auto-download (browsers may block this, user needs to allow)
-                // For production, this would use a server endpoint
-                console.log(`Base de datos actualizada: db_${dbName}.json`);
-                console.log(`Datos:`, this[dbName]);
-                
-                // Store trigger for manual download if needed
-                window.pendingDownloads = window.pendingDownloads || {};
-                window.pendingDownloads[dbName] = {
-                    blob: dataBlob,
-                    filename: `db_${dbName}.json`
-                };
-            },
-
-            downloadPending(dbName) {
-                if (window.pendingDownloads && window.pendingDownloads[dbName]) {
-                    const data = window.pendingDownloads[dbName];
-                    const url = URL.createObjectURL(data.blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = data.filename;
-                    link.click();
-                    URL.revokeObjectURL(url);
+            // Llamado tras cada mutación local para refrescar desde Supabase
+            async save(entity) {
+                const userId = app.currentUser?.rut;
+                if (!userId) return;
+                if (entity === 'fincas') {
+                    const res = await this.svc().getFincas(userId);
+                    this.fincas.fincas = (res.data || []).map(r => ({
+                        id: r.id, userId: r.user_id, nombre: r.nombre,
+                        direccion: r.direccion, superficie: r.superficie, createdAt: r.created_at
+                    }));
+                }
+                if (entity === 'cuarteles') {
+                    const res = await this.svc().getCuarteles(userId);
+                    this.cuarteles.cuarteles = (res.data || []).map(r => ({
+                        id: r.id, userId: r.user_id, fincaId: r.finca_id,
+                        nombre: r.nombre, superficie: r.superficie,
+                        cultivo: r.cultivo, variedad: r.variedad,
+                        sistemaRiego: r.sistema_riego,
+                        anioImplantacion: r.anio_implantacion,
+                        telaAntigranizo: r.tela_antigranizo,
+                        createdAt: r.created_at
+                    }));
+                }
+                if (entity === 'labores') {
+                    const res = await this.svc().getLabores(userId);
+                    this.labores.labores = (res.data || []).map(r => {
+                        const extra = r.datos ? JSON.parse(r.datos) : {};
+                        return {
+                            id: r.id, userId: r.user_id, cuartelId: r.cuartel_id,
+                            tipo: r.tipo, fecha: r.fecha, observaciones: r.observaciones,
+                            jornales: r.jornales, tiempo: r.tiempo,
+                            productos: r.productos, equipo: r.equipo,
+                            kgCosechados: r.kg_cosechados, createdAt: r.created_at,
+                            ...extra
+                        };
+                    });
                 }
             }
         };
@@ -2027,22 +2223,20 @@
             async init() {
                 await loadConfig();
                 await DB.loadAll();
-                
-                const savedUser = localStorage.getItem('currentUser');
+
+                const savedUser = sessionStorage.getItem('currentUser');
                 if (savedUser) {
                     this.currentUser = JSON.parse(savedUser);
+                    await DB.loadForUser(this.currentUser.rut);
                     this.showMainApp();
                 } else {
-                    // Populate config selects even before login for proper initialization
                     this.populateConfigSelects();
                 }
-                
+
                 const today = new Date().toISOString().split('T')[0];
                 if (document.getElementById('laborFecha')) {
                     document.getElementById('laborFecha').value = today;
                 }
-
-                // Logo ya configurado en el HTML directamente
             },
 
 
@@ -2122,22 +2316,6 @@
                                     <label class="form-label">Tiempo de aplicación (hs)</label>
                                     <input type="number" id="laborTiempo" class="form-input" placeholder="Ej: 8" step="0.5">
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Volúmen Caldo / ha (L)</label>
-                                    <input type="number" id="laborVolumenCaldo" class="form-input" placeholder="Ej: 400" step="1">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Maquinaria utilizada</label>
-                                    <input type="text" id="laborMaquinaria" class="form-input" placeholder="Ej: Bomba centrífuga">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Lts. combustible</label>
-                                    <input type="number" id="laborCombustible" class="form-input" placeholder="Ej: 20" step="0.5">
-                                </div>
-                            </div>
-                            <div class="form-row">
                                 <div class="form-group">
                                     <label class="form-label">Número Jornales / Operarios</label>
                                     <input type="number" id="laborJornales" class="form-input" placeholder="Ej: 2" step="0.5">
@@ -2223,8 +2401,8 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Volúmen Caldo / ha (L)</label>
-                                    <input type="number" id="laborVolumenCaldo" class="form-input" placeholder="Ej: 200" step="1">
+                                    <label class="form-label">Kg de producto total</label>
+                                    <input type="number" id="laborKgProducto" class="form-input" placeholder="Ej: 50" step="0.1">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Maquinaria utilizada</label>
@@ -2498,29 +2676,28 @@
                     return;
                 }
 
-                const existingUser = DB.usuarios.users.find(u => u.rut === rut);
+                const existingUser = await DB.svc().checkUserExists(rut);
                 if (existingUser) {
                     this.showAlert('registerAlert', 'Ya existe un usuario registrado con ese nombre', 'info');
                     return;
                 }
 
-                const existingEmail = DB.usuarios.users.find(u => u.email === email);
-                if (existingEmail) {
-                    this.showAlert('registerAlert', 'Ya existe una cuenta registrada con ese email', 'info');
-                    return;
-                }
-
                 const newUser = {
-                    rut: rut,
-                    name: name,
-                    email: email,
-                    rutDni: rutDni || '',
-                    password: password,
+                    rut,
+                    nombre: name,
+                    name,
+                    email,
+                    rut_dni: rutDni || '',
+                    password,
                     createdAt: new Date().toISOString()
                 };
 
+                const res = await DB.svc().registerUser(rut, name, password, email, rutDni || '');
+                if (!res.success) {
+                    this.showAlert('registerAlert', 'Error al registrar: ' + res.error);
+                    return;
+                }
                 DB.usuarios.users.push(newUser);
-                DB.save('usuarios');
 
                 this.showAlert('registerAlert', 'Usuario registrado exitosamente. Ya puede ingresar.', 'success');
 
@@ -2544,26 +2721,35 @@
                     return;
                 }
 
-                const user = DB.usuarios.users.find(u => u.rut === rut);
-                
-                if (!user) {
-                    this.showAlert('loginAlert', 'Usuario no encontrado. Verifique su usuario o cree una cuenta nueva.');
+                const res = await DB.svc().loginUser(rut, password);
+
+                if (!res.success) {
+                    // Try to distinguish wrong password vs unknown user
+                    const exists = await DB.svc().checkUserExists(rut);
+                    if (!exists) {
+                        this.showAlert('loginAlert', 'Usuario no encontrado. Verifique su usuario o cree una cuenta nueva.');
+                    } else {
+                        this.showAlert('loginAlert', 'Contraseña incorrecta');
+                    }
                     return;
                 }
 
-                if (user.password !== password) {
-                    this.showAlert('loginAlert', 'Contraseña incorrecta');
-                    return;
-                }
-
-                this.currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
+                const user = res.data;
+                const userObj = {
+                    rut: user.rut,
+                    name: user.nombre,
+                    nombre: user.nombre,
+                    email: user.email || ''
+                };
+                this.currentUser = userObj;
+                sessionStorage.setItem('currentUser', JSON.stringify(userObj));
+                await DB.loadForUser(userObj.rut);
                 this.showMainApp();
             },
 
             logout() {
                 this.currentUser = null;
-                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
                 document.getElementById('authScreen').classList.remove('hidden');
                 document.getElementById('mainApp').classList.add('hidden');
                 this.showLogin();
@@ -2599,7 +2785,7 @@
                 }
             },
 
-            addFinca() {
+            async addFinca() {
                 const nombre = document.getElementById('fincaNombre').value.trim();
                 const direccion = document.getElementById('fincaDireccion').value.trim();
                 const superficie = document.getElementById('fincaSuperficie').value;
@@ -2610,24 +2796,26 @@
                 }
 
                 const finca = {
-                    id: 'finca_' + Date.now(),
-                    userId: this.currentUser.rut,
+                    user_id: this.currentUser.rut,
                     nombre,
                     direccion,
-                    superficie: parseFloat(superficie),
-                    createdAt: new Date().toISOString()
+                    superficie: parseFloat(superficie)
                 };
 
-                DB.fincas.fincas.push(finca);
-                DB.save('fincas');
-                
+                const res = await DB.svc().addFinca(finca);
+                if (!res.success) {
+                    this.showAlert('fincaAlert', 'Error al guardar: ' + res.error);
+                    return;
+                }
+
+                await DB.save('fincas');
                 this.showAlert('fincaAlert', 'Finca agregada exitosamente', 'success');
                 this.showNotification('✓ Finca registrada');
-                
+
                 document.getElementById('fincaNombre').value = '';
                 document.getElementById('fincaDireccion').value = '';
                 document.getElementById('fincaSuperficie').value = '';
-                
+
                 this.loadFincas();
                 this.populateSelects();
             },
@@ -2661,12 +2849,13 @@
                     return;
                 }
 
-                DB.fincas.fincas = DB.fincas.fincas.filter(f => f.id !== fincaId);
-                DB.cuarteles.cuarteles = DB.cuarteles.cuarteles.filter(c => c.fincaId !== fincaId);
-                
-                DB.save('fincas');
-                DB.save('cuarteles');
-                
+                const res = await DB.svc().deleteFinca(fincaId);
+                if (!res.success) {
+                    this.showNotification('Error al eliminar finca: ' + res.error);
+                    return;
+                }
+                await DB.save('fincas');
+                await DB.save('cuarteles');
                 this.showNotification('✓ Finca eliminada');
                 this.loadFincas();
                 this.loadCuarteles();
@@ -2698,25 +2887,27 @@
                 }
 
                 const cuartel = {
-                    id: 'cuartel_' + Date.now(),
-                    userId: this.currentUser.rut,
-                    fincaId,
+                    user_id: this.currentUser.rut,
+                    finca_id: fincaId,
                     nombre,
                     superficie: parseFloat(superficie),
                     cultivo,
                     variedad,
-                    sistemaRiego: riego,
-                    anioImplantacion: anio || null,
-                    telaAntigranizo: antigranizo,
-                    createdAt: new Date().toISOString()
+                    sistema_riego: riego,
+                    anio_implantacion: anio || null,
+                    tela_antigranizo: antigranizo
                 };
 
-                DB.cuarteles.cuarteles.push(cuartel);
-                DB.save('cuarteles');
-                
+                const res = await DB.svc().addCuartel(cuartel);
+                if (!res.success) {
+                    this.showAlert('cuartelAlert', 'Error al guardar: ' + res.error);
+                    return;
+                }
+
+                await DB.save('cuarteles');
                 this.showAlert('cuartelAlert', 'Cuartel agregado exitosamente', 'success');
                 this.showNotification('✓ Cuartel registrado');
-                
+
                 document.getElementById('cuartelNombre').value = '';
                 document.getElementById('cuartelSuperficie').value = '';
                 document.getElementById('cuartelCultivo').value = '';
@@ -2726,7 +2917,7 @@
                 document.getElementById('cuartelAnio').value = '';
                 document.getElementById('cuartelAntigranizo').checked = false;
                 document.getElementById('otroRiegoContainer').style.display = 'none';
-                
+
                 this.loadCuarteles();
                 this.populateSelects();
             },
@@ -2762,14 +2953,11 @@
                 }).join('');
             },
 
-            deleteCuartel(cuartelId) {
-                if (!confirm('¿Está seguro de eliminar este cuartel?')) {
-                    return;
-                }
-
-                DB.cuarteles.cuarteles = DB.cuarteles.cuarteles.filter(c => c.id !== cuartelId);
-                DB.save('cuarteles');
-                
+            async deleteCuartel(cuartelId) {
+                if (!confirm('¿Está seguro de eliminar este cuartel?')) return;
+                const res = await DB.svc().deleteCuartel(cuartelId);
+                if (!res.success) { this.showNotification('Error: ' + res.error); return; }
+                await DB.save('cuarteles');
                 this.showNotification('✓ Cuartel eliminado');
                 this.loadCuarteles();
                 this.populateSelects();
@@ -2812,29 +3000,43 @@
                     case 'riego':
                         break;
 
-                    case 'aplicaciones':
-                    case 'fertilizacion':
-                        const prefix = tipo === 'aplicaciones' ? 'prod' : 'fert';
-                        const checkboxes = document.querySelectorAll(`#${tipo === 'aplicaciones' ? 'productosAplicacionContainer' : 'productosFertilizacionContainer'} input[type="checkbox"]:checked`);
+                    case 'aplicaciones': {
+                        const checkboxes = document.querySelectorAll('#productosAplicacionContainer input[type="checkbox"]:checked');
                         labor.productos = [];
                         checkboxes.forEach(cb => {
-                            const productoId = cb.id.replace(`${prefix}_`, '');
-                            const dosisInput = document.querySelector(`#dosis_${prefix}_${productoId} .dosis-input`);
+                            const productoId = cb.id.replace('prod_', '');
+                            const dosisInput = document.querySelector(`#dosis_prod_${productoId} .dosis-input`);
                             labor.productos.push({ nombre: cb.value, dosis: dosisInput ? dosisInput.value : '' });
                         });
                         if (labor.productos.length === 0) {
                             this.showAlert('laborAlert', 'Por favor seleccione al menos un producto');
                             return;
                         }
-                        if (tipo === 'aplicaciones') {
-                            const pa = document.getElementById('laborPlagaEnfermedad');
-                            if (pa) labor.plagaEnfermedad = pa.value.trim();
-                            const pia = document.getElementById('laborPrincipioActivo');
-                            if (pia) labor.principioActivo = pia.value.trim();
-                            const car = document.getElementById('laborCarencia');
-                            if (car) labor.carencia = parseInt(car.value) || 0;
-                        }
+                        const pa = document.getElementById('laborPlagaEnfermedad');
+                        if (pa) labor.plagaEnfermedad = pa.value.trim();
+                        const pia = document.getElementById('laborPrincipioActivo');
+                        if (pia) labor.principioActivo = pia.value.trim();
+                        const car = document.getElementById('laborCarencia');
+                        if (car) labor.carencia = parseInt(car.value) || 0;
                         break;
+                    }
+
+                    case 'fertilizacion': {
+                        const checkboxesFert = document.querySelectorAll('#productosFertilizacionContainer input[type="checkbox"]:checked');
+                        labor.productos = [];
+                        checkboxesFert.forEach(cb => {
+                            const productoId = cb.id.replace('fert_', '');
+                            const dosisInput = document.querySelector(`#dosis_fert_${productoId} .dosis-input`);
+                            labor.productos.push({ nombre: cb.value, dosis: dosisInput ? dosisInput.value : '' });
+                        });
+                        if (labor.productos.length === 0) {
+                            this.showAlert('laborAlert', 'Por favor seleccione al menos un producto');
+                            return;
+                        }
+                        const kgProd = document.getElementById('laborKgProducto');
+                        if (kgProd) labor.kgProducto = parseFloat(kgProd.value) || 0;
+                        break;
+                    }
 
                     case 'labranzas':
                         labor.equipo = (document.getElementById('laborEquipo')?.value) || '';
@@ -2869,31 +3071,50 @@
                         break;
                 }
 
-                DB.labores.labores.push(labor);
-                DB.save('labores');
-                
+                // Map local labor object to Supabase schema
+                const { id, userId, cuartelId, tipo, fecha, observaciones,
+                        jornales, tiempo, maquinaria, combustible, volumenCaldo,
+                        productos, equipo, kgCosechados, ...extraFields } = labor;
+
+                const laborRow = {
+                    user_id: userId,
+                    cuartel_id: cuartelId,
+                    tipo,
+                    fecha,
+                    observaciones: observaciones || '',
+                    jornales: jornales || null,
+                    tiempo: tiempo || null,
+                    productos: productos || null,
+                    equipo: equipo || null,
+                    kg_cosechados: kgCosechados || null,
+                    datos: Object.keys(extraFields).length ? JSON.stringify(extraFields) : null
+                };
+
+                const res = await DB.svc().addLabor(laborRow);
+                if (!res.success) {
+                    this.showAlert('laborAlert', 'Error al guardar: ' + res.error);
+                    return;
+                }
+
+                await DB.save('labores');
                 this.showAlert('laborAlert', 'Labor registrada exitosamente', 'success');
                 this.showNotification('✓ Labor registrada');
-                
-                // Clear form
+
                 document.getElementById('laborTipo').value = '';
                 document.getElementById('laborCuartel').value = '';
                 document.getElementById('laborObservaciones').value = '';
                 document.getElementById('laborFecha').value = new Date().toISOString().split('T')[0];
                 document.getElementById('laborConditionalFields').innerHTML = '';
-                
+
                 this.loadLabores();
             },
 
 
-            deleteLabor(laborId) {
-                if (!confirm('¿Está seguro de eliminar esta labor?')) {
-                    return;
-                }
-
-                DB.labores.labores = DB.labores.labores.filter(l => l.id !== laborId);
-                DB.save('labores');
-                
+            async deleteLabor(laborId) {
+                if (!confirm('¿Está seguro de eliminar esta labor?')) return;
+                const res = await DB.svc().deleteLabor(laborId);
+                if (!res.success) { this.showNotification('Error: ' + res.error); return; }
+                await DB.save('labores');
                 this.showNotification('✓ Labor eliminada');
                 this.loadLabores();
             },
@@ -3161,23 +3382,10 @@
         window.addEventListener('load', () => {
             if (!sessionStorage.getItem('_reloading')) {
                 // Nueva pestaña o sesión fresca — limpiar sesión
-                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
             }
             sessionStorage.removeItem('_reloading');
         });
-
-        // ================================================================
-        // SUPABASE CONFIG (from config-supabase.js inline)
-        // ================================================================
-        const SUPABASE_URL = 'https://ioycrbykhbfxudumrcsi.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_AC7lgoV5Ok4WXXZR3ZoJ3Q_U3OrlYc3';
-        let _supabase = null;
-        function getSupabase() {
-            if (!_supabase) {
-                try { _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn('Supabase no disponible:', e); }
-            }
-            return _supabase;
-        }
 
         // ================================================================
         // STOCK APP
@@ -3209,26 +3417,16 @@
             },
 
             async cargarProductos() {
-                const sb = getSupabase();
                 const userId = app.currentUser?.rut;
                 if (!userId) return;
-                if (sb) {
-                    const { data, error } = await sb.from('stock_productos').select('*').eq('user_id', userId).order('nombre');
-                    if (!error && data) { this.productos = data; }
-                    else { this.productos = this._loadLocal(); }
-                } else {
-                    this.productos = this._loadLocal();
-                }
+                const res = await DB.svc().getStock(userId);
+                this.productos = (res.data || []).map(r => ({
+                    ...r,
+                    movimientos: typeof r.movimientos === 'string'
+                        ? JSON.parse(r.movimientos) : (r.movimientos || [])
+                }));
                 this.renderTabla();
                 this.renderStats();
-            },
-
-            _loadLocal() {
-                const raw = localStorage.getItem('stock_productos_' + (app.currentUser?.rut || ''));
-                return raw ? JSON.parse(raw) : [];
-            },
-            _saveLocal() {
-                localStorage.setItem('stock_productos_' + (app.currentUser?.rut || ''), JSON.stringify(this.productos));
             },
 
             openModal(id) {
@@ -3267,26 +3465,18 @@
                     user_id: app.currentUser.rut,
                     nombre, categoria, cantidad, unidad,
                     stock_minimo: minimo, vencimiento, observaciones,
-                    movimientos: [{ tipo: 'entrada', cantidad, fecha: new Date().toISOString().split('T')[0], motivo: 'Stock inicial' }],
-                    created_at: new Date().toISOString()
+                    movimientos: [{ tipo: 'entrada', cantidad, fecha: new Date().toISOString().split('T')[0], motivo: 'Stock inicial' }]
                 };
 
-                const sb = getSupabase();
-                if (sb) {
-                    const { data, error } = await sb.from('stock_productos').insert([{
-                        id: producto.id, user_id: producto.user_id, nombre, categoria,
-                        cantidad, unidad, stock_minimo: minimo, vencimiento, observaciones,
-                        movimientos: producto.movimientos
-                    }]).select();
-                    this.productos.push((!error && data) ? (data[0] || producto) : producto);
-                } else {
-                    this.productos.push(producto);
+                const res = await DB.svc().upsertStock(producto);
+                if (!res.success) {
+                    document.getElementById('stockFormAlert').innerHTML = `<div class="alert alert-danger">Error: ${res.error}</div>`;
+                    return;
                 }
-                this._saveLocal();
+                this.productos.push(res.data || producto);
                 this.closeModal('modalAgregarProducto');
                 this.renderTabla();
                 this.renderStats();
-                // auto-switch to correct sub-tab
                 const isAgro = AGRO_CATS.includes(categoria);
                 const targetBtn = document.getElementById(isAgro ? 'stockTabAgro' : 'stockTabFert');
                 this.switchCategoria(isAgro ? 'agroquimicos' : 'fertilizantes', targetBtn);
@@ -3319,11 +3509,9 @@
                 }
                 const nuevaCantidad = tipo === 'entrada' ? p.cantidad + cant : p.cantidad - cant;
                 const movs = [...(p.movimientos || []), { tipo, cantidad: cant, fecha, motivo }];
-                const sb = getSupabase();
-                if (sb) await sb.from('stock_productos').update({ cantidad: nuevaCantidad, movimientos: movs }).eq('id', productoId);
+                await DB.svc().upsertStock({ ...p, cantidad: nuevaCantidad, movimientos: movs });
                 this.productos[idx].cantidad = nuevaCantidad;
                 this.productos[idx].movimientos = movs;
-                this._saveLocal();
                 this.closeModal('modalMovimiento');
                 this.renderTabla();
                 this.renderStats();
@@ -3344,10 +3532,8 @@
 
             async eliminarProducto(productoId) {
                 if (!confirm('¿Eliminar este producto del stock?')) return;
-                const sb = getSupabase();
-                if (sb) await sb.from('stock_productos').delete().eq('id', productoId);
+                await DB.svc().deleteStock(productoId);
                 this.productos = this.productos.filter(x => x.id !== productoId);
-                this._saveLocal();
                 this.renderTabla();
                 this.renderStats();
                 app.showNotification('✓ Producto eliminado');
@@ -3623,12 +3809,15 @@
         const monitoreoApp = {
             registros: [],
 
-            _key() { return 'monitoreo_' + (app.currentUser?.rut || ''); },
-            _load() { const r = localStorage.getItem(this._key()); return r ? JSON.parse(r) : []; },
-            _save() { localStorage.setItem(this._key(), JSON.stringify(this.registros)); },
-
-            init() {
-                this.registros = this._load();
+            async init() {
+                const res = await DB.svc().getMonitoreo(app.currentUser?.rut);
+                this.registros = (res.data || []).map(r => ({
+                    id: r.id, userId: r.user_id, fecha: r.fecha,
+                    cuartelId: r.cuartel_id, plaga: r.plaga,
+                    puntoMuestreo: r.punto_muestreo, hilera: r.hilera,
+                    planta: r.planta, nivel: r.nivel, observaciones: r.observaciones,
+                    createdAt: r.created_at
+                }));
                 this.poblarCuarteles('monCuartel');
                 this.poblarCuarteles('monFiltroCuartel', true);
                 this.renderTabla(this.registros);
@@ -3657,7 +3846,7 @@
             },
             ocultarFormulario() { document.getElementById('monitoreoForm').style.display = 'none'; },
 
-            guardar() {
+            async guardar() {
                 const fecha = document.getElementById('monFecha').value;
                 const cuartelId = document.getElementById('monCuartel').value;
                 const plaga = document.getElementById('monPlaga').value.trim();
@@ -3667,28 +3856,38 @@
                 }
                 const reg = {
                     id: 'mon_' + Date.now(),
-                    userId: app.currentUser.rut,
+                    user_id: app.currentUser.rut,
                     fecha,
-                    cuartelId,
+                    cuartel_id: cuartelId,
                     plaga,
-                    puntoMuestreo: document.getElementById('monPuntoMuestreo').value.trim(),
+                    punto_muestreo: document.getElementById('monPuntoMuestreo').value.trim(),
                     hilera: document.getElementById('monHilera').value.trim(),
                     planta: document.getElementById('monPlanta').value.trim(),
                     nivel: document.getElementById('monNivel').value,
-                    observaciones: document.getElementById('monObservaciones').value.trim(),
-                    createdAt: new Date().toISOString()
+                    observaciones: document.getElementById('monObservaciones').value.trim()
                 };
-                this.registros.push(reg);
-                this._save();
+                const res = await DB.svc().addMonitoreo(reg);
+                if (!res.success) {
+                    document.getElementById('monitoreoAlert').innerHTML = `<div class="alert alert-danger">Error: ${res.error}</div>`;
+                    return;
+                }
+                // map back to local format
+                const localReg = {
+                    id: reg.id, userId: reg.user_id, fecha: reg.fecha,
+                    cuartelId: reg.cuartel_id, plaga: reg.plaga,
+                    puntoMuestreo: reg.punto_muestreo, hilera: reg.hilera,
+                    planta: reg.planta, nivel: reg.nivel, observaciones: reg.observaciones
+                };
+                this.registros.push(localReg);
                 this.ocultarFormulario();
                 this.filtrar();
                 app.showNotification('✓ Registro de monitoreo guardado');
             },
 
-            eliminar(id) {
+            async eliminar(id) {
                 if (!confirm('¿Eliminar este registro de monitoreo?')) return;
+                await DB.svc().deleteMonitoreo(id);
                 this.registros = this.registros.filter(r => r.id !== id);
-                this._save();
                 this.filtrar();
             },
 
