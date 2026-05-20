@@ -7,179 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-    // SupabaseService — basado en supabase-service.js con extensiones para stock y monitoreo
-    class SupabaseService {
-        constructor(url, key) {
-            this.supabase = supabase.createClient(url, key);
-        }
-
-        // USUARIOS
-        async registerUser(rut, nombre, password, email = '', rut_dni = '') {
-            try {
-                // Build payload — omit email/rut_dni if empty to avoid column-not-found errors
-                // if migration hasn't been run yet
-                const payload = { rut, nombre, password };
-                if (email) payload.email = email;
-                if (rut_dni) payload.rut_dni = rut_dni;
-                const { data, error } = await this.supabase
-                    .from('usuarios').insert([payload]).select();
-                if (error) {
-                    // If error is about missing column, retry with base fields only
-                    if (error.code === '42703' || (error.message || '').includes('column')) {
-                        const { data: d2, error: e2 } = await this.supabase
-                            .from('usuarios').insert([{ rut, nombre, password }]).select();
-                        if (e2) throw e2;
-                        return { success: true, data: d2[0] };
-                    }
-                    throw error;
-                }
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async loginUser(rut, password) {
-            try {
-                const { data, error } = await this.supabase
-                    .from('usuarios').select('*').eq('rut', rut).eq('password', password);
-                if (error) throw error;
-                if (!data || data.length === 0) return { success: false, error: 'Credenciales incorrectas' };
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async checkUserExists(rut) {
-            try {
-                const { data } = await this.supabase
-                    .from('usuarios').select('rut').eq('rut', rut);
-                return !!(data && data.length > 0);
-            } catch(e) { return false; }
-        }
-
-        // FINCAS
-        async getFincas(userId) {
-            try {
-                const { data, error } = await this.supabase.from('fincas')
-                    .select('*').eq('user_id', userId).order('created_at', { ascending: false });
-                if (error) throw error;
-                return { success: true, data };
-            } catch(e) { return { success: false, error: e.message, data: [] }; }
-        }
-        async addFinca(finca) {
-            try {
-                const { data, error } = await this.supabase.from('fincas').insert([finca]).select();
-                if (error) throw error;
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async deleteFinca(id) {
-            try {
-                const { error } = await this.supabase.from('fincas').delete().eq('id', id);
-                if (error) throw error;
-                return { success: true };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-
-        // CUARTELES
-        async getCuarteles(userId) {
-            try {
-                const { data, error } = await this.supabase.from('cuarteles')
-                    .select('*').eq('user_id', userId).order('created_at', { ascending: false });
-                if (error) throw error;
-                return { success: true, data };
-            } catch(e) { return { success: false, error: e.message, data: [] }; }
-        }
-        async addCuartel(cuartel) {
-            try {
-                const { data, error } = await this.supabase.from('cuarteles').insert([cuartel]).select();
-                if (error) throw error;
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async deleteCuartel(id) {
-            try {
-                const { error } = await this.supabase.from('cuarteles').delete().eq('id', id);
-                if (error) throw error;
-                return { success: true };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-
-        // LABORES
-        async getLabores(userId, filters = {}) {
-            try {
-                let q = this.supabase.from('labores').select('*').eq('user_id', userId);
-                if (filters.tipo)       q = q.eq('tipo', filters.tipo);
-                if (filters.cuartelId)  q = q.eq('cuartel_id', filters.cuartelId);
-                if (filters.fechaDesde) q = q.gte('fecha', filters.fechaDesde);
-                if (filters.fechaHasta) q = q.lte('fecha', filters.fechaHasta);
-                const { data, error } = await q.order('fecha', { ascending: false });
-                if (error) throw error;
-                return { success: true, data };
-            } catch(e) { return { success: false, error: e.message, data: [] }; }
-        }
-        async addLabor(labor) {
-            try {
-                const { data, error } = await this.supabase.from('labores').insert([labor]).select();
-                if (error) throw error;
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async deleteLabor(id) {
-            try {
-                const { error } = await this.supabase.from('labores').delete().eq('id', id);
-                if (error) throw error;
-                return { success: true };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-
-        // STOCK
-        async getStock(userId) {
-            try {
-                const { data, error } = await this.supabase.from('stock_productos')
-                    .select('*').eq('user_id', userId).order('nombre');
-                if (error) throw error;
-                return { success: true, data };
-            } catch(e) { return { success: false, error: e.message, data: [] }; }
-        }
-        async upsertStock(producto) {
-            try {
-                const { data, error } = await this.supabase.from('stock_productos')
-                    .upsert([producto]).select();
-                if (error) throw error;
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async deleteStock(id) {
-            try {
-                const { error } = await this.supabase.from('stock_productos').delete().eq('id', id);
-                if (error) throw error;
-                return { success: true };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-
-        // MONITOREO
-        async getMonitoreo(userId) {
-            try {
-                const { data, error } = await this.supabase.from('monitoreo')
-                    .select('*').eq('user_id', userId).order('fecha', { ascending: false });
-                if (error) throw error;
-                return { success: true, data };
-            } catch(e) { return { success: false, error: e.message, data: [] }; }
-        }
-        async addMonitoreo(reg) {
-            try {
-                const { data, error } = await this.supabase.from('monitoreo').insert([reg]).select();
-                if (error) throw error;
-                return { success: true, data: data[0] };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-        async deleteMonitoreo(id) {
-            try {
-                const { error } = await this.supabase.from('monitoreo').delete().eq('id', id);
-                if (error) throw error;
-                return { success: true };
-            } catch(e) { return { success: false, error: e.message }; }
-        }
-    }
-    </script>
+    <script src="supabase-service.js"></script>
     <style>
         :root {
             --primary: #2d5016;
@@ -1313,7 +1141,9 @@
                     </div>
                     <h1 class="auth-title">Cuaderno de Campo Digital</h1>
                     <p class="auth-subtitle">Sistema de Registro de Labores Agrícolas — Mendoza</p>
+                    <div class="logo-upload-section">
                     </div>
+                </div>
 
                 <!-- Login Form -->
                 <div id="loginForm">
@@ -2081,15 +1911,6 @@
     </div>
 
     <script>
-        // ============================================
-        // CONFIGURACIÓN DEL LOGO
-        // Reemplazar 'URL_DE_TU_LOGO_AQUI' con la URL de tu logo
-        // Ejemplo: const LOGO_URL = 'https://miempresa.com/logo.png';
-        // O usar ruta relativa: const LOGO_URL = './img/logo.png';
-        // ============================================
-        const LOGO_URL = 'URL_DE_TU_LOGO_AQUI';
-        
-        
         // Configuration data
         let CONFIG = {
             cultivos: [],
