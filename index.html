@@ -17,24 +17,40 @@
         // USUARIOS
         async registerUser(rut, nombre, password, email = '', rut_dni = '') {
             try {
+                // Build payload — omit email/rut_dni if empty to avoid column-not-found errors
+                // if migration hasn't been run yet
+                const payload = { rut, nombre, password };
+                if (email) payload.email = email;
+                if (rut_dni) payload.rut_dni = rut_dni;
                 const { data, error } = await this.supabase
-                    .from('usuarios').insert([{ rut, nombre, password, email, rut_dni }]).select();
-                if (error) throw error;
+                    .from('usuarios').insert([payload]).select();
+                if (error) {
+                    // If error is about missing column, retry with base fields only
+                    if (error.code === '42703' || (error.message || '').includes('column')) {
+                        const { data: d2, error: e2 } = await this.supabase
+                            .from('usuarios').insert([{ rut, nombre, password }]).select();
+                        if (e2) throw e2;
+                        return { success: true, data: d2[0] };
+                    }
+                    throw error;
+                }
                 return { success: true, data: data[0] };
             } catch(e) { return { success: false, error: e.message }; }
         }
         async loginUser(rut, password) {
             try {
                 const { data, error } = await this.supabase
-                    .from('usuarios').select('*').eq('rut', rut).eq('password', password).single();
+                    .from('usuarios').select('*').eq('rut', rut).eq('password', password);
                 if (error) throw error;
-                return { success: true, data };
+                if (!data || data.length === 0) return { success: false, error: 'Credenciales incorrectas' };
+                return { success: true, data: data[0] };
             } catch(e) { return { success: false, error: e.message }; }
         }
         async checkUserExists(rut) {
             try {
-                const { data } = await this.supabase.from('usuarios').select('rut').eq('rut', rut).single();
-                return data !== null;
+                const { data } = await this.supabase
+                    .from('usuarios').select('rut').eq('rut', rut);
+                return !!(data && data.length > 0);
             } catch(e) { return false; }
         }
 
@@ -1297,7 +1313,14 @@
                     </div>
                     <h1 class="auth-title">Cuaderno de Campo Digital</h1>
                     <p class="auth-subtitle">Sistema de Registro de Labores Agrícolas — Mendoza</p>
-                    
+                    <div class="logo-upload-section">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">
+                            Para personalizar el logo, editar la línea 8 del archivo HTML:<br>
+                            <code style="background: #f0f0f0; padding: 0.3rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.5rem;">
+                            const LOGO_URL = 'URL_DE_TU_LOGO_AQUI';
+                            </code>
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Login Form -->
@@ -2676,6 +2699,8 @@
                     return;
                 }
 
+                this.showAlert('registerAlert', 'Creando cuenta...', 'info');
+
                 const existingUser = await DB.svc().checkUserExists(rut);
                 if (existingUser) {
                     this.showAlert('registerAlert', 'Ya existe un usuario registrado con ese nombre', 'info');
@@ -2716,20 +2741,16 @@
                     return;
                 }
 
-                if (!this.validateRut(rut)) {
-                    this.showAlert('loginAlert', 'Ingrese un nombre de usuario válido');
-                    return;
-                }
+                this.showAlert('loginAlert', 'Verificando credenciales...', 'info');
 
                 const res = await DB.svc().loginUser(rut, password);
 
                 if (!res.success) {
-                    // Try to distinguish wrong password vs unknown user
                     const exists = await DB.svc().checkUserExists(rut);
                     if (!exists) {
                         this.showAlert('loginAlert', 'Usuario no encontrado. Verifique su usuario o cree una cuenta nueva.');
                     } else {
-                        this.showAlert('loginAlert', 'Contraseña incorrecta');
+                        this.showAlert('loginAlert', 'Contraseña incorrecta.');
                     }
                     return;
                 }
