@@ -20,7 +20,7 @@
     "Otro"
   ],
   "variedadesPorCultivo": {
-    "Vid": ["Malbec", "Cabernet Sauvignon", "Merlot", "Syrah", "Bonarda", "Chardonnay", "Torrontés", "Sauvignon Blanc", "Chenin", "Otra"],
+    "Vid": ["Malbec2", "Cabernet Sauvignon", "Merlot", "Syrah", "Bonarda", "Chardonnay", "Torrontés", "Sauvignon Blanc", "Chenin", "Otra"],
     "Olivo": ["Arauco", "Arbequina", "Barnea", "Coratina", "Frantoio", "Manzanilla", "Picual", "Otra"],
     "Manzana": ["Red Delicious", "Granny Smith", "Gala", "Fuji", "Pink Lady", "Cripps Pink", "Otra"],
     "Pera": ["Williams", "Packham's", "Beurré D'Anjou", "Abate Fetel", "Otra"],
